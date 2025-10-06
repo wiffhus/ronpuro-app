@@ -42,7 +42,7 @@
         scrollToBottom();
       }, [messages]);
 
-     const handleSend = async () => {
+const handleSend = async () => {
   if (!input.trim() || isStreaming) return;
 
   const userMessage = input.trim();
@@ -71,6 +71,9 @@
 6. 根拠となるURLがある場合は[リンクテキスト](URL)形式で
 7. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
+  // 空のメッセージを追加（ストリーミング表示用）
+  setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -86,19 +89,39 @@
     const data = await response.json();
     const text = data.text || data.error || 'エラーが発生しました';
 
-    setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+    // 疑似ストリーミング: 文字を1つずつ表示
+    let displayedText = '';
+    const chars = text.split('');
+    
+    for (let i = 0; i < chars.length; i++) {
+      displayedText += chars[i];
+      setMessages(prev => {
+        const newMessages = [...prev];
+        newMessages[newMessages.length - 1] = {
+          role: 'assistant',
+          content: displayedText
+        };
+        return newMessages;
+      });
+      
+      // 表示速度を調整（ミリ秒）
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
 
   } catch (error) {
     console.error('Error:', error);
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: 'エラーが発生しました。もう一度お試しください。' 
-    }]);
+    setMessages(prev => {
+      const newMessages = [...prev];
+      newMessages[newMessages.length - 1] = {
+        role: 'assistant',
+        content: 'エラーが発生しました。もう一度お試しください。'
+      };
+      return newMessages;
+    });
   } finally {
     setIsStreaming(false);
   }
 };
-
       const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
           if (enterCount === 0) {
@@ -267,3 +290,4 @@
 </body>
 
 </html>
+
