@@ -19,6 +19,12 @@
     * {
       box-sizing: border-box;
     }
+    /* ホーム画面でのテキスト選択を無効化（iPhoneの青い選択を防ぐ） */
+    .home-screen {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
     @keyframes dots {
       0%, 20% { content: '.'; }
       40% { content: '..'; }
@@ -618,7 +624,7 @@
         };
 
         return (
-          <div style={{
+          <div className="home-screen" style={{
             minHeight: '100vh',
             background: 'linear-gradient(180deg, #1e3a5f 0%, #4a7ba7 100%)',
             padding: '20px',
