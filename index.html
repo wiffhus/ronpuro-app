@@ -61,6 +61,9 @@ const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fu
       const [longPressTimer, setLongPressTimer] = useState(null);
       const [isDragging, setIsDragging] = useState(false);  
 const [touchStartPos, setTouchStartPos] = useState(null); 
+      const [moveMode, setMoveMode] = useState(false);
+const [movingApp, setMovingApp] = useState(null);
+const [showMobileMenu, setShowMobileMenu] = useState(null);
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -110,20 +113,32 @@ useEffect(() => {
   }
 }, [screen]);
       
-      // localStorageから復元
+      // localStorageから復元（バージョン管理付き）
 useEffect(() => {
+  const APP_VERSION = '1.1'; // 新しいキャラ追加時は番号を上げる
+  const savedVersion = localStorage.getItem('aiphone_version');
   const savedMessages = localStorage.getItem('aiphone_messages');
   const savedAppPositions = localStorage.getItem('aiphone_appPositions');
   const savedDockApps = localStorage.getItem('aiphone_dockApps');
   
-  if (savedMessages) {
-    setMessages(JSON.parse(savedMessages));
-  }
-  if (savedAppPositions) {
-    setAppPositions(JSON.parse(savedAppPositions));
-  }
-  if (savedDockApps) {
-    setDockApps(JSON.parse(savedDockApps));
+  // バージョンが違う場合、appPositionsだけリセット
+  if (savedVersion !== APP_VERSION) {
+    localStorage.setItem('aiphone_version', APP_VERSION);
+    // メッセージは保持、アイコン配置のみリセット
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+  } else {
+    // バージョンが同じなら全部復元
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+    if (savedAppPositions) {
+      setAppPositions(JSON.parse(savedAppPositions));
+    }
+    if (savedDockApps) {
+      setDockApps(JSON.parse(savedDockApps));
+    }
   }
 }, []);
 
@@ -340,7 +355,8 @@ const handleTouchEnd = (e) => {
     setLongPressTimer(null);
   }
   
-  if (isDragging && draggedApp) {
+  // 移動モードの場合
+  if (moveMode && movingApp) {
     const touch = e.changedTouches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     
@@ -350,7 +366,42 @@ const handleTouchEnd = (e) => {
       
       if (gridCell) {
         const position = parseInt(gridCell.getAttribute('data-grid-index'));
-        // handleGridDropはif文の中で定義されているので、ここでは直接位置を更新
+        if (dockApps.includes(movingApp.id)) {
+          setDockApps(prev => prev.filter(id => id !== movingApp.id));
+        }
+        setAppPositions(prev => prev.map(app => 
+          app.id === movingApp.id ? { ...app, position } : app
+        ));
+      } else if (dockArea) {
+        if (!dockApps.includes(movingApp.id)) {
+          setDockApps(prev => [...prev, movingApp.id]);
+        }
+      }
+    }
+    
+    setMoveMode(false);
+    setMovingApp(null);
+    setTouchStartPos(null);
+    setShowTooltip(null);
+    return;
+  }
+  
+  // 通常の長押し（モバイルメニュー表示）
+  if (isDragging && draggedApp && isMobile) {
+    setShowMobileMenu(draggedApp.id);
+    setIsDragging(false);
+    setDraggedApp(null);
+  } else if (isDragging && draggedApp) {
+    // PCの場合は従来通り
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (element) {
+      const gridCell = element.closest('[data-grid-index]');
+      const dockArea = element.closest('[data-dock]');
+      
+      if (gridCell) {
+        const position = parseInt(gridCell.getAttribute('data-grid-index'));
         if (dockApps.includes(draggedApp.id)) {
           setDockApps(prev => prev.filter(id => id !== draggedApp.id));
         }
@@ -358,7 +409,7 @@ const handleTouchEnd = (e) => {
           app.id === draggedApp.id ? { ...app, position } : app
         ));
       } else if (dockArea) {
-      if (!dockApps.includes(draggedApp.id)) {
+        if (!dockApps.includes(draggedApp.id)) {
           setDockApps(prev => [...prev, draggedApp.id]);
         }
       }
@@ -426,6 +477,14 @@ if (screen === 'home') {
           aiPhone
         </div>
       </div>
+         {moveMode && (
+        <div style={{
+          textAlign: 'center',
+          ...
+        }}>
+          ...
+        </div>
+      )}
 
       <div style={{
         maxWidth: '600px',
@@ -513,6 +572,10 @@ onTouchEnd={handleTouchEnd}
                     {app.description}
                   </div>
                 )}
+                  {showMobileMenu === app.id && isMobile && (
+                  <div onClick={(e) => e.stopPropagation()}
+                  ...
+                )}
               </div>
             ) : null}
           </div>
@@ -583,6 +646,16 @@ onTouchEnd={handleTouchEnd}
                   fontSize: '32px'
                 }}>
                   {app.icon}
+                  </div>
+<div style={{
+  color: 'rgba(255,255,255,0.9)',
+  fontSize: '10px',
+  fontWeight: '500',
+  marginTop: '4px',
+  textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+}}>
+  {app.name}
+</div>
                 </div>
               </div>
             );
@@ -716,6 +789,7 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
+
 
 
 
