@@ -50,10 +50,10 @@
       const [input, setInput] = useState('');
       const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false });
       const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false });
-      const [appPositions, setAppPositions] = useState([
-        { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します' },
-        { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します' },
-      ]);
+    const [appPositions, setAppPositions] = useState([
+  { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
+  { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
+]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
@@ -235,181 +235,219 @@
         setDockApps(prev => prev.filter(id => id !== appId));
       };
 
-      if (screen === 'home') {
-        return (
-          <div style={{
-            minHeight: '100vh',
-            background: 'linear-gradient(180deg, #1e3a5f 0%, #4a7ba7 100%)',
-            padding: '20px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-            position: 'relative'
-          }}>
-            <div style={{
+if (screen === 'home') {
+  const gridSize = 4 * 6; // 4列 × 6行 = 24セル
+  const grid = Array(gridSize).fill(null);
+  
+  // アイコンをグリッドに配置
+  appPositions.forEach(app => {
+    if (!dockApps.includes(app.id) && app.position !== undefined && app.position < gridSize) {
+      grid[app.position] = app;
+    }
+  });
+
+  const handleGridDrop = (e, position) => {
+    e.preventDefault();
+    if (!draggedApp) return;
+
+    // Dockから削除
+    if (dockApps.includes(draggedApp.id)) {
+      setDockApps(prev => prev.filter(id => id !== draggedApp.id));
+    }
+
+    // 新しい位置に配置
+    setAppPositions(prev => prev.map(app => 
+      app.id === draggedApp.id ? { ...app, position } : app
+    ));
+    setDraggedApp(null);
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(180deg, #1e3a5f 0%, #4a7ba7 100%)',
+      padding: '20px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      position: 'relative'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        color: 'white',
+        marginBottom: '40px',
+        fontSize: '14px'
+      }}>
+        <div style={{ fontSize: '16px', fontWeight: '500' }}>
+          {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+        <div style={{ fontSize: '16px', fontWeight: '600', letterSpacing: '1px' }}>
+          aiPhone
+        </div>
+      </div>
+
+      <div style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: '30px',
+        padding: '20px',
+        marginBottom: '100px'
+      }}>
+        {grid.map((app, index) => (
+          <div
+            key={index}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleGridDrop(e, index)}
+            style={{
+              minHeight: '100px',
+              position: 'relative',
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: 'column',
               alignItems: 'center',
-              color: 'white',
-              marginBottom: '40px',
-              fontSize: '14px'
-            }}>
-              <div style={{ fontSize: '16px', fontWeight: '500' }}>
-                {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              <div style={{ fontSize: '16px', fontWeight: '600', letterSpacing: '1px' }}>
-                aiPhone
-              </div>
-            </div>
-
-            <div style={{
-              maxWidth: '600px',
-              margin: '0 auto',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '30px',
-              padding: '20px',
-              marginBottom: '100px'
-            }}>
-              {appPositions.map((app) => (
-                <div
-                  key={app.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, app)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, app)}
-                  onClick={() => setScreen(app.id)}
-                  onMouseEnter={() => !isMobile && setShowTooltip(app.id)}
-                  onMouseLeave={() => !isMobile && setShowTooltip(null)}
-                  onTouchStart={() => handleLongPressStart(app)}
-                  onTouchEnd={handleLongPressEnd}
-                  style={{
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    position: 'relative'
-                  }}
+              justifyContent: 'center'
+            }}
+          >
+            {app ? (
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, app)}
+                onClick={() => setScreen(app.id)}
+                onMouseEnter={() => !isMobile && setShowTooltip(app.id)}
+                onMouseLeave={() => !isMobile && setShowTooltip(null)}
+                onTouchStart={() => handleLongPressStart(app)}
+                onTouchEnd={handleLongPressEnd}
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  position: 'relative'
+                }}
+              >
+                <div style={{
+                  width: '80px',
+                  height: '80px',
+                  margin: '0 auto 8px',
+                  borderRadius: '18px',
+                  background: app.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  fontSize: '40px',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
+                  {app.icon}
+                </div>
+                <div style={{
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                }}>
+                  {app.name}
+                </div>
+                
+                {showTooltip === app.id && (
                   <div style={{
-                    width: '80px',
-                    height: '80px',
-                    margin: '0 auto 8px',
-                    borderRadius: '18px',
-                    background: app.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    fontSize: '40px',
-                    transition: 'transform 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  >
-                    {app.icon}
-                  </div>
-                  <div style={{
+                    position: 'absolute',
+                    top: '-50px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(0,0,0,0.8)',
                     color: 'white',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
                     fontSize: '12px',
-                    fontWeight: '500',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                    whiteSpace: 'nowrap',
+                    zIndex: 10,
+                    pointerEvents: 'none'
                   }}>
-                    {app.name}
+                    {app.description}
                   </div>
-                  
-                  {showTooltip === app.id && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '-50px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      background: 'rgba(0,0,0,0.8)',
-                      color: 'white',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      whiteSpace: 'nowrap',
-                      zIndex: 10,
-                      pointerEvents: 'none'
-                    }}>
-                      {app.description}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, null, true)}
-              style={{
-                position: 'fixed',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(255,255,255,0.25)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '24px',
-                padding: '12px 20px',
-                display: 'flex',
-                gap: '20px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                minWidth: dockApps.length > 0 ? '280px' : '200px',
-                justifyContent: 'center',
-                minHeight: '84px',
-                alignItems: 'center'
-              }}
-            >
-              {dockApps.length === 0 ? (
-                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                  アイコンをここにドラッグ
-                </div>
-              ) : (
-                dockApps.map(appId => {
-                  const app = appPositions.find(a => a.id === appId);
-                  if (!app) return null;
-                  
-                  return (
-                    <div
-                      key={app.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, app)}
-                      onClick={() => setScreen(app.id)}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (window.confirm('Dockから削除しますか？')) {
-                          removeDockApp(app.id);
-                        }
-                      }}
-                      style={{
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        transition: 'transform 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) translateY(-5px)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateY(0)'}
-                    >
-                      <div style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '14px',
-                        background: app.color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                        fontSize: '32px'
-                      }}>
-                        {app.icon}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                )}
+              </div>
+            ) : null}
           </div>
-        );
-      }
+        ))}
+      </div>
 
+      <div
+        onDragOver={handleDragOver}
+        onDrop={(e) => handleDrop(e, null, true)}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.25)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '24px',
+          padding: '12px 20px',
+          display: 'flex',
+          gap: '20px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          border: '1px solid rgba(255,255,255,0.3)',
+          minWidth: dockApps.length > 0 ? '280px' : '200px',
+          justifyContent: 'center',
+          minHeight: '84px',
+          alignItems: 'center'
+        }}
+      >
+        {dockApps.length === 0 ? (
+          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+            アイコンをここにドラッグ
+          </div>
+        ) : (
+          dockApps.map(appId => {
+            const app = appPositions.find(a => a.id === appId);
+            if (!app) return null;
+            
+            return (
+              <div
+                key={app.id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, app)}
+                onClick={() => setScreen(app.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  if (window.confirm('Dockから削除しますか？')) {
+                    removeDockApp(app.id);
+                  }
+                }}
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'transform 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateY(0)'}
+              >
+                <div style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '14px',
+                  background: app.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  fontSize: '32px'
+                }}>
+                  {app.icon}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
       return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
           <div style={{
@@ -534,3 +572,4 @@
   </script>
 </body>
 </html>
+
