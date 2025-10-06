@@ -62,6 +62,52 @@
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+// ブラウザの戻る/進むボタン対応
+useEffect(() => {
+  const handlePopState = (e) => {
+    if (e.state && e.state.screen) {
+      setScreen(e.state.screen);
+    }
+  };
+  
+  window.addEventListener('popstate', handlePopState);
+  
+  // 初期状態を履歴に追加
+  window.history.replaceState({ screen: 'home' }, '', window.location.href);
+  
+  return () => window.removeEventListener('popstate', handlePopState);
+}, []);
+
+// 画面遷移時に履歴に追加
+useEffect(() => {
+  if (screen !== 'home') {
+    window.history.pushState({ screen }, '', `#${screen}`);
+  } else {
+    window.history.pushState({ screen: 'home' }, '', window.location.pathname);
+  }
+}, [screen]);
+
+// 自動スクロール制御
+const [userScrolled, setUserScrolled] = useState(false);
+const chatContainerRef = useRef(null);
+
+useEffect(() => {
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+    
+    setUserScrolled(!isAtBottom);
+  };
+  
+  const container = chatContainerRef.current;
+  if (container) {
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }
+}, [screen]);
+      
       // localStorageから復元
 useEffect(() => {
   const savedMessages = localStorage.getItem('aiphone_messages');
@@ -92,10 +138,11 @@ useEffect(() => {
   localStorage.setItem('aiphone_dockApps', JSON.stringify(dockApps));
 }, [dockApps]);
 
-      const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      };
-
+    const scrollToBottom = () => {
+  if (!userScrolled) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+};
       useEffect(() => {
         scrollToBottom();
       }, [messages, isThinking]);
@@ -246,19 +293,65 @@ useEffect(() => {
         setDraggedApp(null);
       };
 
-      const handleLongPressStart = (app) => {
-        const timer = setTimeout(() => {
-          setShowTooltip(app.id);
-        }, 500);
-        setLongPressTimer(timer);
-      };
+   const [isDragging, setIsDragging] = useState(false);
+const [touchStartPos, setTouchStartPos] = useState(null);
 
-      const handleLongPressEnd = () => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          setLongPressTimer(null);
-        }
-      };
+const handleTouchStart = (e, app) => {
+  const touch = e.touches[0];
+  setTouchStartPos({ x: touch.clientX, y: touch.clientY, app });
+  
+  const timer = setTimeout(() => {
+    setIsDragging(true);
+    setDraggedApp(app);
+    setShowTooltip(app.id);
+  }, 500);
+  setLongPressTimer(timer);
+};
+
+const handleTouchMove = (e) => {
+  if (longPressTimer && touchStartPos) {
+    const touch = e.touches[0];
+    const distance = Math.sqrt(
+      Math.pow(touch.clientX - touchStartPos.x, 2) + 
+      Math.pow(touch.clientY - touchStartPos.y, 2)
+    );
+    
+    if (distance > 10) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }
+};
+
+const handleTouchEnd = (e) => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    setLongPressTimer(null);
+  }
+  
+  if (isDragging && draggedApp) {
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (element) {
+      const gridCell = element.closest('[data-grid-index]');
+      const dockArea = element.closest('[data-dock]');
+      
+      if (gridCell) {
+        const position = parseInt(gridCell.getAttribute('data-grid-index'));
+        handleGridDrop({ preventDefault: () => {} }, position);
+      } else if (dockArea) {
+        handleDrop({ preventDefault: () => {} }, null, true);
+      }
+    }
+    
+    setIsDragging(false);
+    setDraggedApp(null);
+  }
+  
+  setTouchStartPos(null);
+  setShowTooltip(null);
+};
 
       const removeDockApp = (appId) => {
         setDockApps(prev => prev.filter(id => id !== appId));
@@ -327,6 +420,7 @@ if (screen === 'home') {
         {grid.map((app, index) => (
           <div
             key={index}
+            data-grid-index={index}
             onDragOver={handleDragOver}
             onDrop={(e) => handleGridDrop(e, index)}
             style={{
@@ -345,8 +439,9 @@ if (screen === 'home') {
                 onClick={() => setScreen(app.id)}
                 onMouseEnter={() => !isMobile && setShowTooltip(app.id)}
                 onMouseLeave={() => !isMobile && setShowTooltip(null)}
-                onTouchStart={() => handleLongPressStart(app)}
-                onTouchEnd={handleLongPressEnd}
+               onTouchStart={(e) => handleTouchStart(e, app)}
+onTouchMove={handleTouchMove}
+onTouchEnd={handleTouchEnd}
                 style={{
                   cursor: 'pointer',
                   textAlign: 'center',
@@ -406,6 +501,7 @@ if (screen === 'home') {
       </div>
 
       <div
+        data-dock="true"
         onDragOver={handleDragOver}
         onDrop={(e) => handleDrop(e, null, true)}
         style={{
@@ -501,7 +597,7 @@ if (screen === 'home') {
             </button>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px' }}>
+          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px' }}>
             {currentMessages.map((msg, idx) => (
               <div key={idx} style={{
                 marginBottom: '16px', display: 'flex',
@@ -601,5 +697,6 @@ if (screen === 'home') {
   </script>
 </body>
 </html>
+
 
 
