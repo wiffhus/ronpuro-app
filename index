@@ -477,14 +477,36 @@ if (screen === 'home') {
           aiPhone
         </div>
       </div>
-         {moveMode && (
-        <div style={{
-          textAlign: 'center',
-          ...
-        }}>
-          ...
-        </div>
-      )}
+        {moveMode && (
+  <div style={{
+    textAlign: 'center',
+    color: 'white',
+    marginBottom: '20px',
+    padding: '12px',
+    background: 'rgba(255,255,255,0.2)',
+    borderRadius: '12px',
+    backdropFilter: 'blur(10px)'
+  }}>
+    📍 {movingApp?.name}の移動先をタップしてください
+    <button
+      onClick={() => {
+        setMoveMode(false);
+        setMovingApp(null);
+      }}
+      style={{
+        marginLeft: '12px',
+        padding: '6px 12px',
+        borderRadius: '8px',
+        border: 'none',
+        background: 'rgba(255,255,255,0.3)',
+        color: 'white',
+        cursor: 'pointer'
+      }}
+    >
+      キャンセル
+    </button>
+  </div>
+)}
 
       <div style={{
         maxWidth: '600px',
@@ -572,10 +594,88 @@ onTouchEnd={handleTouchEnd}
                     {app.description}
                   </div>
                 )}
-                  {showMobileMenu === app.id && isMobile && (
-                  <div onClick={(e) => e.stopPropagation()}
-                  ...
-                )}
+                {showMobileMenu === app.id && isMobile && (
+  <div 
+    onClick={(e) => e.stopPropagation()}
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '20px',
+      minWidth: '200px'
+    }}>
+      <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
+        {app.name}
+      </div>
+      <button
+        onClick={() => {
+          setShowMobileMenu(null);
+          setScreen(app.id);
+        }}
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginBottom: '8px',
+          borderRadius: '8px',
+          border: 'none',
+          background: '#007AFF',
+          color: 'white',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}
+      >
+        開く
+      </button>
+      <button
+        onClick={() => {
+          setShowMobileMenu(null);
+          setMoveMode(true);
+          setMovingApp(app);
+        }}
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginBottom: '8px',
+          borderRadius: '8px',
+          border: '1px solid #007AFF',
+          background: 'white',
+          color: '#007AFF',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}
+      >
+        📍 移動する
+      </button>
+      <button
+        onClick={() => setShowMobileMenu(null)}
+        style={{
+          width: '100%',
+          padding: '12px',
+          borderRadius: '8px',
+          border: '1px solid #ccc',
+          background: 'white',
+          color: '#666',
+          fontSize: '14px',
+          cursor: 'pointer'
+        }}
+      >
+        キャンセル
+      </button>
+    </div>
+  </div>
+)}
               </div>
             ) : null}
           </div>
@@ -656,7 +756,6 @@ onTouchEnd={handleTouchEnd}
 }}>
   {app.name}
 </div>
-                </div>
               </div>
             );
           })
@@ -789,6 +888,7 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
+
 
 
 
