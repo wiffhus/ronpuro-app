@@ -58,7 +58,8 @@
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
       const [longPressTimer, setLongPressTimer] = useState(null);
-      
+      const [isDragging, setIsDragging] = useState(false);  
+const [touchStartPos, setTouchStartPos] = useState(null); 
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -697,6 +698,7 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
+
 
 
 
