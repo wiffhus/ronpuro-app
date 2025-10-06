@@ -815,10 +815,17 @@
                             background: 'white',
                             borderRadius: '16px',
                             padding: '20px',
-                            minWidth: '200px'
+                            minWidth: '240px',
+                            maxWidth: '90%'
                           }}>
-                            <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
-                              {app.name}
+                            <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '40px', marginBottom: '8px' }}>{app.icon}</div>
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
+                                {app.name}
+                              </div>
+                              <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
+                                {app.description}
+                              </div>
                             </div>
                             <button
                               onClick={() => {
@@ -834,7 +841,8 @@
                                 background: '#007AFF',
                                 color: 'white',
                                 fontSize: '14px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                fontWeight: '500'
                               }}
                             >
                               開く
@@ -854,10 +862,11 @@
                                 background: 'white',
                                 color: '#007AFF',
                                 fontSize: '14px',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                fontWeight: '500'
                               }}
                             >
-                              📍 移動する
+                              移動する
                             </button>
                             <button
                               onClick={() => setShowMobileMenu(null)}
@@ -881,6 +890,114 @@
                   ) : null}
                 </div>
               ))}
+            </div>
+
+            {/* Dock内のアイコンのメニュー（全画面オーバーレイとして別途配置） */}
+            {showMobileMenu && isMobile && (
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMobileMenu(null);
+                }}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  zIndex: 1000,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    minWidth: '240px',
+                    maxWidth: '90%'
+                  }}
+                >
+                  {(() => {
+                    const menuApp = appPositions.find(a => a.id === showMobileMenu);
+                    if (!menuApp) return null;
+                    return (
+                      <>
+                        <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '40px', marginBottom: '8px' }}>{menuApp.icon}</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {menuApp.name}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
+                            {menuApp.description}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowMobileMenu(null);
+                            setScreen(menuApp.id);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            marginBottom: '8px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#007AFF',
+                            color: 'white',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          開く
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowMobileMenu(null);
+                            setMoveMode(true);
+                            setMovingApp(menuApp);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            marginBottom: '8px',
+                            borderRadius: '8px',
+                            border: '1px solid #007AFF',
+                            background: 'white',
+                            color: '#007AFF',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          移動する
+                        </button>
+                        <button
+                          onClick={() => setShowMobileMenu(null)}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #ccc',
+                            background: 'white',
+                            color: '#666',
+                            fontSize: '14px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          キャンセル
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
             </div>
 
             <div
