@@ -69,15 +69,14 @@
       const [showMobileMenu, setShowMobileMenu] = useState(null);
       const [userScrolled, setUserScrolled] = useState(false);
       const [isUserInteracting, setIsUserInteracting] = useState(false);
+      const [currentTime, setCurrentTime] = useState(new Date());
       
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const chatContainerRef = useRef(null);
       const scrollTimeoutRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const [currentTime, setCurrentTime] = useState(new Date());
 
-      // リアルタイム時刻更新
       useEffect(() => {
         const timer = setInterval(() => {
           setCurrentTime(new Date());
@@ -101,7 +100,6 @@
       useEffect(() => {
         if (screen !== 'home') {
           window.history.pushState({ screen }, '', `#${screen}`);
-          // チャット画面に戻ったら最新メッセージにスクロール
           setUserScrolled(false);
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
@@ -168,28 +166,24 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '1.4'; // バージョンアップ！
+        const APP_VERSION = '1.4';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
         const savedDockApps = localStorage.getItem('aiphone_dockApps');
         
-        // バージョンチェック：古いバージョンなら自動リロード
         if (savedVersion && savedVersion !== APP_VERSION) {
           console.log(`Version update: ${savedVersion} -> ${APP_VERSION}`);
           localStorage.setItem('aiphone_version', APP_VERSION);
-          // メッセージは保持、レイアウトのみリセット
           if (savedMessages) {
             setMessages(JSON.parse(savedMessages));
           }
-          // 1秒後にリロード（メッセージ保存のため）
           setTimeout(() => {
             window.location.reload(true);
           }, 1000);
           return;
         }
         
-        // 初回またはバージョン一致
         localStorage.setItem('aiphone_version', APP_VERSION);
         if (savedMessages) {
           setMessages(JSON.parse(savedMessages));
@@ -339,7 +333,6 @@
         const userMessage = input.trim();
         setInput('');
         
-        // メッセージ送信時に自動スクロールを有効化
         setUserScrolled(false);
 
         setMessages(prev => ({
@@ -794,210 +787,10 @@
                           {app.description}
                         </div>
                       )}
-
-                      {showMobileMenu === app.id && isMobile && (
-                        <div 
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(0,0,0,0.5)',
-                            zIndex: 1000,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <div style={{
-                            background: 'white',
-                            borderRadius: '16px',
-                            padding: '20px',
-                            minWidth: '240px',
-                            maxWidth: '90%'
-                          }}>
-                            <div style={{ marginBottom: '12px', textAlign: 'center' }}>
-                              <div style={{ fontSize: '40px', marginBottom: '8px' }}>{app.icon}</div>
-                              <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
-                                {app.name}
-                              </div>
-                              <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
-                                {app.description}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setShowMobileMenu(null);
-                                setScreen(app.id);
-                              }}
-                              style={{
-                                width: '100%',
-                                padding: '12px',
-                                marginBottom: '8px',
-                                borderRadius: '8px',
-                                border: 'none',
-                                background: '#007AFF',
-                                color: 'white',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                fontWeight: '500'
-                              }}
-                            >
-                              開く
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowMobileMenu(null);
-                                setMoveMode(true);
-                                setMovingApp(app);
-                              }}
-                              style={{
-                                width: '100%',
-                                padding: '12px',
-                                marginBottom: '8px',
-                                borderRadius: '8px',
-                                border: '1px solid #007AFF',
-                                background: 'white',
-                                color: '#007AFF',
-                                fontSize: '14px',
-                                cursor: 'pointer',
-                                fontWeight: '500'
-                              }}
-                            >
-                              移動する
-                            </button>
-                            <button
-                              onClick={() => setShowMobileMenu(null)}
-                              style={{
-                                width: '100%',
-                                padding: '12px',
-                                borderRadius: '8px',
-                                border: '1px solid #ccc',
-                                background: 'white',
-                                color: '#666',
-                                fontSize: '14px',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              キャンセル
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ) : null}
                 </div>
               ))}
-            </div>
-
-            {/* Dock内のアイコンのメニュー（全画面オーバーレイとして別途配置） */}
-            {showMobileMenu && isMobile && (
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMobileMenu(null);
-                }}
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0,0,0,0.5)',
-                  zIndex: 1000,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <div 
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    minWidth: '240px',
-                    maxWidth: '90%'
-                  }}
-                >
-                  {(() => {
-                    const menuApp = appPositions.find(a => a.id === showMobileMenu);
-                    if (!menuApp) return null;
-                    return (
-                      <>
-                        <div style={{ marginBottom: '12px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '40px', marginBottom: '8px' }}>{menuApp.icon}</div>
-                          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
-                            {menuApp.name}
-                          </div>
-                          <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
-                            {menuApp.description}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setShowMobileMenu(null);
-                            setScreen(menuApp.id);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            marginBottom: '8px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            background: '#007AFF',
-                            color: 'white',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            fontWeight: '500'
-                          }}
-                        >
-                          開く
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowMobileMenu(null);
-                            setMoveMode(true);
-                            setMovingApp(menuApp);
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            marginBottom: '8px',
-                            borderRadius: '8px',
-                            border: '1px solid #007AFF',
-                            background: 'white',
-                            color: '#007AFF',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            fontWeight: '500'
-                          }}
-                        >
-                          移動する
-                        </button>
-                        <button
-                          onClick={() => setShowMobileMenu(null)}
-                          style={{
-                            width: '100%',
-                            padding: '12px',
-                            borderRadius: '8px',
-                            border: '1px solid #ccc',
-                            background: 'white',
-                            color: '#666',
-                            fontSize: '14px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          キャンセル
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
             </div>
 
             <div
@@ -1104,6 +897,109 @@
                 })
               )}
             </div>
+
+            {showMobileMenu && isMobile && (
+              <div 
+                onClick={() => setShowMobileMenu(null)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.5)',
+                  zIndex: 1000,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    minWidth: '240px',
+                    maxWidth: '90%'
+                  }}
+                >
+                  {(() => {
+                    const menuApp = appPositions.find(a => a.id === showMobileMenu);
+                    if (!menuApp) return null;
+                    return (
+                      <>
+                        <div style={{ marginBottom: '12px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '40px', marginBottom: '8px' }}>{menuApp.icon}</div>
+                          <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '4px' }}>
+                            {menuApp.name}
+                          </div>
+                          <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.4' }}>
+                            {menuApp.description}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setShowMobileMenu(null);
+                            setScreen(menuApp.id);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            marginBottom: '8px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#007AFF',
+                            color: 'white',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          開く
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowMobileMenu(null);
+                            setMoveMode(true);
+                            setMovingApp(menuApp);
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            marginBottom: '8px',
+                            borderRadius: '8px',
+                            border: '1px solid #007AFF',
+                            background: 'white',
+                            color: '#007AFF',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            fontWeight: '500'
+                          }}
+                        >
+                          移動する
+                        </button>
+                        <button
+                          onClick={() => setShowMobileMenu(null)}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid #ccc',
+                            background: 'white',
+                            color: '#666',
+                            fontSize: '14px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          キャンセル
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </div>
         );
       }
@@ -1261,4 +1157,3 @@
   </script>
 </body>
 </html>
-
