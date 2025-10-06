@@ -26,7 +26,6 @@ export async function onRequest(context) {
       throw new Error('API key not configured');
     }
 
-    // 非ストリーミング版に変更
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
       {
@@ -50,9 +49,13 @@ export async function onRequest(context) {
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラー: 応答がありません';
-
-    return new Response(JSON.stringify({ text }), {
+    
+    // デバッグ: レスポンス全体を返す
+    return new Response(JSON.stringify({ 
+      debug: true,
+      fullResponse: data,
+      text: data.candidates?.[0]?.content?.parts?.[0]?.text || 'テキストが見つかりません'
+    }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
