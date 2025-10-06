@@ -1,12 +1,14 @@
 export async function onRequest(context) {
   const { request, env } = context;
   
+  // CORSヘッダーの設定
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
+  // OPTIONSリクエスト（プリフライト）への対応
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,33 +21,37 @@ export async function onRequest(context) {
   }
 
   try {
-    const { message, systemPrompt, history = [] } = await request.json();
-    const API_KEY = env.GOOGLE_API_KEY;
+    const { message, systemPrompt, history } = await request.json();
+    const API_KEY = env.GOOGLE_API_KEY; // 環境変数から取得
 
     if (!API_KEY) {
-      throw new Error('API key not configured');
+      return new Response(JSON.stringify({ error: 'API key not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    // 会話履歴をGemini API形式に変換
+    // 会話履歴をGemini形式に変換
     const contents = [
       { role: 'user', parts: [{ text: systemPrompt }] },
       { role: 'model', parts: [{ text: '承知しました。ルールに従って応答します。' }] }
     ];
 
-    // 過去の会話を追加
-    history.forEach(msg => {
-      if (msg.role === 'user') {
-        contents.push({ role: 'user', parts: [{ text: msg.content }] });
-      } else if (msg.role === 'assistant' && msg.content) {
-        contents.push({ role: 'model', parts: [{ text: msg.content }] });
-      }
-    });
+    // historyが存在する場合、履歴を追加
+    if (history && history.length > 0) {
+      history.forEach(msg => {
+        contents.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        });
+      });
+    }
 
-    // 現在のメッセージを追加
+    // 最新のメッセージを追加
     contents.push({ role: 'user', parts: [{ text: message }] });
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,22 +59,20 @@ export async function onRequest(context) {
           contents: contents,
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 8192,
+            maxOutputTokens: 2048,
           }
         })
       }
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
-    
-    return new Response(JSON.stringify({ 
-      text: data.candidates?.[0]?.content?.parts?.[0]?.text || 'テキストが見つかりません'
-    }), {
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
+
+    return new Response(JSON.stringify({ text }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
