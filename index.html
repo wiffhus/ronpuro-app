@@ -72,6 +72,15 @@
       const chatContainerRef = useRef(null);
       const scrollTimeoutRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const [currentTime, setCurrentTime] = useState(new Date());
+
+      // リアルタイム時刻更新
+      useEffect(() => {
+        const timer = setInterval(() => {
+          setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+      }, []);
 
       useEffect(() => {
         const handlePopState = (e) => {
@@ -89,6 +98,11 @@
       useEffect(() => {
         if (screen !== 'home') {
           window.history.pushState({ screen }, '', `#${screen}`);
+          // チャット画面に戻ったら最新メッセージにスクロール
+          setUserScrolled(false);
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+          }, 100);
         } else {
           window.history.pushState({ screen: 'home' }, '', window.location.pathname);
         }
@@ -611,7 +625,7 @@
               fontSize: '14px'
             }}>
               <div style={{ fontSize: '16px', fontWeight: '500' }}>
-                {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                {currentTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </div>
               <div style={{ fontSize: '16px', fontWeight: '600', letterSpacing: '1px' }}>
                 aiPhone
@@ -905,6 +919,13 @@
                           setScreen(app.id);
                         }
                       }}
+                      onTouchStart={(e) => {
+                        if (!moveMode) {
+                          handleTouchStart(e, app);
+                        }
+                      }}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                       onContextMenu={(e) => {
                         e.preventDefault();
                         if (!moveMode && window.confirm('Dockから削除しますか？')) {
