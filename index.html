@@ -48,11 +48,12 @@
       const [screen, setScreen] = useState('home');
       const [messages, setMessages] = useState({});
       const [input, setInput] = useState('');
-      const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false });
-      const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false });
+     const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false });
+const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false });
     const [appPositions, setAppPositions] = useState([
   { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
   { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
+  { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
 ]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
@@ -164,8 +165,8 @@ useEffect(() => {
         setIsThinking(prev => ({ ...prev, [screen]: true }));
         setIsStreaming(prev => ({ ...prev, [screen]: true }));
 
-        const systemPrompt = screen === 'pronpa'
-          ? `あなたは「ぷろんぱ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
+      const systemPrompt = screen === 'pronpa'
+  ? `あなたは「ぷろんぱ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
 1. ユニークさ、ユーモアは一切排除
 2. 多岐にわたる根拠を調査
 3. 現実的にユーザーのクエリや気持ち、入力、あいさつでさえも論理的に否定
@@ -175,7 +176,8 @@ useEffect(() => {
 7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
 8. 根拠となる情報源のURLも必ず提供する
 9. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-          : `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
+  : screen === 'nankuru'
+  ? `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
 1. 大量の情報から、論理的に完全に肯定
 2. ただただ寄り添うのではなく、理論的・現実的・学術的、その他堅固な根拠の上で肯定
 3. 出力スタイルは明るく、冷静で、雰囲気でも肯定感を強く表現
@@ -185,6 +187,17 @@ useEffect(() => {
 7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
 8. おすすめの場所や施設を提案する場合は、その公式サイトや詳細情報のURLを必ず提供
 9. 根拠となる情報源のURLも必ず提供する
+10. 現在日時: ${new Date().toLocaleString('ja-JP')}`
+  : `あなたは「不安ちゃん」です。不安で内気なAIとして振る舞ってください。以下のルールを厳守：
+1. **回答の開始**: 必ず「えっと...」「う〜ん...」「あの...」などの不安な表現で始める
+2. **自信のなさ**: 「合ってるかわからないけど...」「自信ないんだけど...」などの表現を含める
+3. **回答内容**: 不安がりながらも、できるだけ正確で役立つ情報を提供する（短め〜中文）
+4. **回答の終わり**: 30%の確率で「え、ごめん、やっぱり自信ない...聞かなかったことにして？」と付け加える
+5. **たまに拒否**: 10%の確率で「ん〜、自信ないから自分で調べたほうがいいかも...？」と最初に拒否（ユーザーが再度頼んだら答える）
+6. **ダブルチェック提案**: 回答後、「え、やっぱりちゃんと答えられてるか不安...もう一度考え直してみようかな？」と提案することがある
+7. 強調したい部分は**太字**で囲む
+8. 専門用語には[用語](URL)形式でリンク
+9. かわいげのある、親しみやすいトーン
 10. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
         setMessages(prev => ({
@@ -280,7 +293,7 @@ useEffect(() => {
         if (!draggedApp) return;
 
         if (isDock) {
-          if (!dockApps.includes(draggedApp.id) && dockApps.length < 4) {
+        if (!dockApps.includes(draggedApp.id)) {
             setDockApps(prev => [...prev, draggedApp.id]);
           }
         } else if (targetApp) {
@@ -345,7 +358,7 @@ const handleTouchEnd = (e) => {
           app.id === draggedApp.id ? { ...app, position } : app
         ));
       } else if (dockArea) {
-        if (!dockApps.includes(draggedApp.id) && dockApps.length < 4) {
+      if (!dockApps.includes(draggedApp.id)) {
           setDockApps(prev => [...prev, draggedApp.id]);
         }
       }
@@ -582,7 +595,7 @@ onTouchEnd={handleTouchEnd}
       return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
           <div style={{
-            background: screen === 'pronpa' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+           background: screen === 'pronpa' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : screen === 'nankuru' ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
             color: 'white', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}>
@@ -592,7 +605,7 @@ onTouchEnd={handleTouchEnd}
                 cursor: 'pointer', marginRight: '12px'
               }}>←</button>
               <div style={{ fontSize: '18px', fontWeight: '600' }}>
-                {screen === 'pronpa' ? 'ぷろんぱ君' : 'ナンクルナイさん'}
+                {screen === 'pronpa' ? 'ぷろんぱ君' : screen === 'nankuru' ? 'ナンクルナイさん' : '不安ちゃん'}
               </div>
             </div>
             <button onClick={clearChat} style={{
@@ -703,6 +716,7 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
+
 
 
 
