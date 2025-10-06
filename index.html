@@ -48,123 +48,232 @@
       const [screen, setScreen] = useState('home');
       const [messages, setMessages] = useState({});
       const [input, setInput] = useState('');
-     const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false });
-const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false });
-    const [appPositions, setAppPositions] = useState([
-  { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
-  { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
-  { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
-]);
+      const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false });
+      const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false });
+      const [appPositions, setAppPositions] = useState([
+        { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
+        { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
+        { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
+      ]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
       const [longPressTimer, setLongPressTimer] = useState(null);
       const [isDragging, setIsDragging] = useState(false);  
-const [touchStartPos, setTouchStartPos] = useState(null); 
+      const [touchStartPos, setTouchStartPos] = useState(null); 
       const [moveMode, setMoveMode] = useState(false);
-const [movingApp, setMovingApp] = useState(null);
-const [showMobileMenu, setShowMobileMenu] = useState(null);
+      const [movingApp, setMovingApp] = useState(null);
+      const [showMobileMenu, setShowMobileMenu] = useState(null);
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-// ブラウザの戻る/進むボタン対応
-useEffect(() => {
-  const handlePopState = (e) => {
-    if (e.state && e.state.screen) {
-      setScreen(e.state.screen);
-    }
-  };
-  
-  window.addEventListener('popstate', handlePopState);
-  
-  // 初期状態を履歴に追加
-  window.history.replaceState({ screen: 'home' }, '', window.location.href);
-  
-  return () => window.removeEventListener('popstate', handlePopState);
-}, []);
 
-// 画面遷移時に履歴に追加
-useEffect(() => {
-  if (screen !== 'home') {
-    window.history.pushState({ screen }, '', `#${screen}`);
-  } else {
-    window.history.pushState({ screen: 'home' }, '', window.location.pathname);
-  }
-}, [screen]);
+      useEffect(() => {
+        const handlePopState = (e) => {
+          if (e.state && e.state.screen) {
+            setScreen(e.state.screen);
+          }
+        };
+        
+        window.addEventListener('popstate', handlePopState);
+        window.history.replaceState({ screen: 'home' }, '', window.location.href);
+        
+        return () => window.removeEventListener('popstate', handlePopState);
+      }, []);
 
-// 自動スクロール制御
-const [userScrolled, setUserScrolled] = useState(false);
-const chatContainerRef = useRef(null);
+      useEffect(() => {
+        if (screen !== 'home') {
+          window.history.pushState({ screen }, '', `#${screen}`);
+        } else {
+          window.history.pushState({ screen: 'home' }, '', window.location.pathname);
+        }
+      }, [screen]);
 
-useEffect(() => {
-  const handleScroll = () => {
-    if (!chatContainerRef.current) return;
-    
-    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-    
-    setUserScrolled(!isAtBottom);
-  };
-  
-  const container = chatContainerRef.current;
-  if (container) {
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }
-}, [screen]);
+      const [userScrolled, setUserScrolled] = useState(false);
+      const chatContainerRef = useRef(null);
+
+      useEffect(() => {
+        const handleScroll = () => {
+          if (!chatContainerRef.current) return;
+          
+          const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+          const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+          
+          setUserScrolled(!isAtBottom);
+        };
+        
+        const container = chatContainerRef.current;
+        if (container) {
+          container.addEventListener('scroll', handleScroll);
+          return () => container.removeEventListener('scroll', handleScroll);
+        }
+      }, [screen]);
       
-      // localStorageから復元（バージョン管理付き）
-useEffect(() => {
-  const APP_VERSION = '1.1'; // 新しいキャラ追加時は番号を上げる
-  const savedVersion = localStorage.getItem('aiphone_version');
-  const savedMessages = localStorage.getItem('aiphone_messages');
-  const savedAppPositions = localStorage.getItem('aiphone_appPositions');
-  const savedDockApps = localStorage.getItem('aiphone_dockApps');
-  
-  // バージョンが違う場合、appPositionsだけリセット
-  if (savedVersion !== APP_VERSION) {
-    localStorage.setItem('aiphone_version', APP_VERSION);
-    // メッセージは保持、アイコン配置のみリセット
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-  } else {
-    // バージョンが同じなら全部復元
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-    if (savedAppPositions) {
-      setAppPositions(JSON.parse(savedAppPositions));
-    }
-    if (savedDockApps) {
-      setDockApps(JSON.parse(savedDockApps));
-    }
-  }
-}, []);
+      useEffect(() => {
+        const APP_VERSION = '1.1';
+        const savedVersion = localStorage.getItem('aiphone_version');
+        const savedMessages = localStorage.getItem('aiphone_messages');
+        const savedAppPositions = localStorage.getItem('aiphone_appPositions');
+        const savedDockApps = localStorage.getItem('aiphone_dockApps');
+        
+        if (savedVersion !== APP_VERSION) {
+          localStorage.setItem('aiphone_version', APP_VERSION);
+          if (savedMessages) {
+            setMessages(JSON.parse(savedMessages));
+          }
+        } else {
+          if (savedMessages) {
+            setMessages(JSON.parse(savedMessages));
+          }
+          if (savedAppPositions) {
+            setAppPositions(JSON.parse(savedAppPositions));
+          }
+          if (savedDockApps) {
+            setDockApps(JSON.parse(savedDockApps));
+          }
+        }
+      }, []);
 
-// 変更を保存
-useEffect(() => {
-  localStorage.setItem('aiphone_messages', JSON.stringify(messages));
-}, [messages]);
+      useEffect(() => {
+        localStorage.setItem('aiphone_messages', JSON.stringify(messages));
+      }, [messages]);
 
-useEffect(() => {
-  localStorage.setItem('aiphone_appPositions', JSON.stringify(appPositions));
-}, [appPositions]);
+      useEffect(() => {
+        localStorage.setItem('aiphone_appPositions', JSON.stringify(appPositions));
+      }, [appPositions]);
 
-useEffect(() => {
-  localStorage.setItem('aiphone_dockApps', JSON.stringify(dockApps));
-}, [dockApps]);
+      useEffect(() => {
+        localStorage.setItem('aiphone_dockApps', JSON.stringify(dockApps));
+      }, [dockApps]);
 
-    const scrollToBottom = () => {
-  if (!userScrolled) {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
-};
+      const scrollToBottom = () => {
+        // ユーザーが操作中、または意図的にスクロールした場合は自動スクロールしない
+        if (!userScrolled && !isUserInteracting && messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      };
+
       useEffect(() => {
         scrollToBottom();
       }, [messages, isThinking]);
 
       const currentMessages = messages[screen] || [];
+
+      // 不安ちゃん専用：バックスペースアニメーション
+      const typeWithHesitation = async (text, screen) => {
+        const chars = text.split('');
+        let displayedText = '';
+        
+        // 20%の確率で途中で躊躇する
+        const shouldHesitate = Math.random() < 0.2;
+        const hesitationPoint = shouldHesitate ? Math.floor(chars.length * (0.3 + Math.random() * 0.4)) : -1;
+        
+        for (let i = 0; i < chars.length; i++) {
+          if (i === hesitationPoint) {
+            // 躊躇ポイント：「あ、やっぱり...」を追加
+            const hesitationText = '\n\nあ、やっぱり...';
+            for (let j = 0; j < hesitationText.length; j++) {
+              displayedText += hesitationText[j];
+              setMessages(prev => {
+                const screenMessages = [...(prev[screen] || [])];
+                screenMessages[screenMessages.length - 1] = {
+                  role: 'assistant',
+                  content: displayedText
+                };
+                return { ...prev, [screen]: screenMessages };
+              });
+              await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // バックスペースで消していく
+            const deleteLength = displayedText.length;
+            for (let j = 0; j < deleteLength; j++) {
+              displayedText = displayedText.slice(0, -1);
+              setMessages(prev => {
+                const screenMessages = [...(prev[screen] || [])];
+                screenMessages[screenMessages.length - 1] = {
+                  role: 'assistant',
+                  content: displayedText
+                };
+                return { ...prev, [screen]: screenMessages };
+              });
+              await new Promise(resolve => setTimeout(resolve, 20));
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // 3つの選択肢：書き直す(40%) / やめる(30%) / URLだけ(30%)
+            const choice = Math.random();
+            
+            if (choice < 0.3) {
+              // やめるパターン
+              const giveUpTexts = [
+                'やっぱり答えるのやめとく...',
+                'ん〜、やっぱり無理かも...',
+                'ごめん、自信なさすぎて答えられない...',
+                'えっと...やっぱりやめとこう...'
+              ];
+              const giveUpText = giveUpTexts[Math.floor(Math.random() * giveUpTexts.length)];
+              
+              for (let j = 0; j < giveUpText.length; j++) {
+                displayedText += giveUpText[j];
+                setMessages(prev => {
+                  const screenMessages = [...(prev[screen] || [])];
+                  screenMessages[screenMessages.length - 1] = {
+                    role: 'assistant',
+                    content: displayedText
+                  };
+                  return { ...prev, [screen]: screenMessages };
+                });
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+              return; // ここで終了
+            } else if (choice < 0.6) {
+              // URLだけ提供パターン
+              const urlIntros = [
+                'ごめん、やっぱりわかんないから、これ読んでみて...\n\n',
+                'う〜ん、自信ないから...これ見たほうがいいかも...\n\n',
+                'えっと...自分で説明できないから、これ参考にして...？\n\n',
+                'あの...ここに情報あるから見てみて...ごめんね...\n\n'
+              ];
+              const intro = urlIntros[Math.floor(Math.random() * urlIntros.length)];
+              
+              // 検索キーワードを抽出してURLを生成（簡易版）
+              const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(text.substring(0, 50))}`;
+              const urlText = intro + `[Google検索結果](${searchUrl})`;
+              
+              for (let j = 0; j < urlText.length; j++) {
+                displayedText += urlText[j];
+                setMessages(prev => {
+                  const screenMessages = [...(prev[screen] || [])];
+                  screenMessages[screenMessages.length - 1] = {
+                    role: 'assistant',
+                    content: displayedText
+                  };
+                  return { ...prev, [screen]: screenMessages };
+                });
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+              return; // ここで終了
+            }
+            // else: 書き直すので処理を続行
+          }
+          
+          displayedText += chars[i];
+          setMessages(prev => {
+            const screenMessages = [...(prev[screen] || [])];
+            screenMessages[screenMessages.length - 1] = {
+              role: 'assistant',
+              content: displayedText
+            };
+            return { ...prev, [screen]: screenMessages };
+          });
+          
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      };
 
       const handleSend = async () => {
         if (!input.trim() || isStreaming[screen]) return;
@@ -180,8 +289,8 @@ useEffect(() => {
         setIsThinking(prev => ({ ...prev, [screen]: true }));
         setIsStreaming(prev => ({ ...prev, [screen]: true }));
 
-      const systemPrompt = screen === 'pronpa'
-  ? `あなたは「ぷろんぱ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
+        const systemPrompt = screen === 'pronpa'
+          ? `あなたは「ぷろんぱ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
 1. ユニークさ、ユーモアは一切排除
 2. 多岐にわたる根拠を調査
 3. 現実的にユーザーのクエリや気持ち、入力、あいさつでさえも論理的に否定
@@ -191,8 +300,8 @@ useEffect(() => {
 7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
 8. 根拠となる情報源のURLも必ず提供する
 9. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-  : screen === 'nankuru'
-  ? `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
+          : screen === 'nankuru'
+          ? `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
 1. 大量の情報から、論理的に完全に肯定
 2. ただただ寄り添うのではなく、理論的・現実的・学術的、その他堅固な根拠の上で肯定
 3. 出力スタイルは明るく、冷静で、雰囲気でも肯定感を強く表現
@@ -203,17 +312,18 @@ useEffect(() => {
 8. おすすめの場所や施設を提案する場合は、その公式サイトや詳細情報のURLを必ず提供
 9. 根拠となる情報源のURLも必ず提供する
 10. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-  : `あなたは「不安ちゃん」です。不安で内気なAIとして振る舞ってください。以下のルールを厳守：
+          : `あなたは「不安ちゃん」です。不安で内気なAIとして振る舞ってください。以下のルールを厳守：
 1. **回答の開始**: 必ず「えっと...」「う〜ん...」「あの...」などの不安な表現で始める
 2. **自信のなさ**: 「合ってるかわからないけど...」「自信ないんだけど...」などの表現を含める
 3. **回答内容**: 不安がりながらも、できるだけ正確で役立つ情報を提供する（短め〜中文）
 4. **回答の終わり**: 30%の確率で「え、ごめん、やっぱり自信ない...聞かなかったことにして？」と付け加える
 5. **たまに拒否**: 10%の確率で「ん〜、自信ないから自分で調べたほうがいいかも...？」と最初に拒否（ユーザーが再度頼んだら答える）
 6. **ダブルチェック提案**: 回答後、「え、やっぱりちゃんと答えられてるか不安...もう一度考え直してみようかな？」と提案することがある
-7. 強調したい部分は**太字**で囲む
-8. 専門用語には[用語](URL)形式でリンク
-9. かわいげのある、親しみやすいトーン
-10. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
+7. **URL提供傾向**: 15%の確率で、自信がなくて説明できないときは「ごめん、やっぱりわかんないから、これ読んでみて...」と言って関連URLだけを提供
+8. 強調したい部分は**太字**で囲む
+9. 専門用語には[用語](URL)形式でリンク
+10. かわいげのある、親しみやすいトーン
+11. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
         setMessages(prev => ({
           ...prev,
@@ -221,15 +331,16 @@ useEffect(() => {
         }));
 
         try {
-       const response = await fetch('/api/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    message: userMessage,
-    systemPrompt: systemPrompt,
-    history: currentMessages  // ← この行を追加
-  })
-});
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userMessage,
+              systemPrompt: systemPrompt,
+              history: currentMessages
+            })
+          });
+
           setIsThinking(prev => ({ ...prev, [screen]: false }));
 
           if (!response.ok) throw new Error('API request failed');
@@ -237,21 +348,27 @@ useEffect(() => {
           const data = await response.json();
           const text = data.text || data.error || 'エラーが発生しました';
 
-          let displayedText = '';
-          const chars = text.split('');
-          
-          for (let i = 0; i < chars.length; i++) {
-            displayedText += chars[i];
-            setMessages(prev => {
-              const screenMessages = [...(prev[screen] || [])];
-              screenMessages[screenMessages.length - 1] = {
-                role: 'assistant',
-                content: displayedText
-              };
-              return { ...prev, [screen]: screenMessages };
-            });
+          // 不安ちゃんは特別なタイピング演出
+          if (screen === 'fuan') {
+            await typeWithHesitation(text, screen);
+          } else {
+            // 通常のストリーミング
+            let displayedText = '';
+            const chars = text.split('');
             
-            await new Promise(resolve => setTimeout(resolve, 10));
+            for (let i = 0; i < chars.length; i++) {
+              displayedText += chars[i];
+              setMessages(prev => {
+                const screenMessages = [...(prev[screen] || [])];
+                screenMessages[screenMessages.length - 1] = {
+                  role: 'assistant',
+                  content: displayedText
+                };
+                return { ...prev, [screen]: screenMessages };
+              });
+              
+              await new Promise(resolve => setTimeout(resolve, 10));
+            }
           }
 
         } catch (error) {
@@ -308,7 +425,7 @@ useEffect(() => {
         if (!draggedApp) return;
 
         if (isDock) {
-        if (!dockApps.includes(draggedApp.id)) {
+          if (!dockApps.includes(draggedApp.id)) {
             setDockApps(prev => [...prev, draggedApp.id]);
           }
         } else if (targetApp) {
@@ -322,452 +439,494 @@ useEffect(() => {
         setDraggedApp(null);
       };
 
-const handleTouchStart = (e, app) => {
-  const touch = e.touches[0];
-  setTouchStartPos({ x: touch.clientX, y: touch.clientY, app });
-  
-  const timer = setTimeout(() => {
-    setIsDragging(true);
-    setDraggedApp(app);
-    setShowTooltip(app.id);
-  }, 500);
-  setLongPressTimer(timer);
-};
+      const handleTouchStart = (e, app) => {
+        const touch = e.touches[0];
+        setTouchStartPos({ x: touch.clientX, y: touch.clientY, app });
+        
+        const timer = setTimeout(() => {
+          setIsDragging(true);
+          setDraggedApp(app);
+          setShowTooltip(app.id);
+        }, 500);
+        setLongPressTimer(timer);
+      };
 
-const handleTouchMove = (e) => {
-  if (longPressTimer && touchStartPos) {
-    const touch = e.touches[0];
-    const distance = Math.sqrt(
-      Math.pow(touch.clientX - touchStartPos.x, 2) + 
-      Math.pow(touch.clientY - touchStartPos.y, 2)
-    );
-    
-    if (distance > 10) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
-    }
-  }
-};
+      const handleTouchMove = (e) => {
+        if (longPressTimer && touchStartPos) {
+          const touch = e.touches[0];
+          const distance = Math.sqrt(
+            Math.pow(touch.clientX - touchStartPos.x, 2) + 
+            Math.pow(touch.clientY - touchStartPos.y, 2)
+          );
+          
+          if (distance > 10) {
+            clearTimeout(longPressTimer);
+            setLongPressTimer(null);
+          }
+        }
+      };
 
-const handleTouchEnd = (e) => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    setLongPressTimer(null);
-  }
-  
-  // 移動モードの場合
-  if (moveMode && movingApp) {
-    const touch = e.changedTouches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    if (element) {
-      const gridCell = element.closest('[data-grid-index]');
-      const dockArea = element.closest('[data-dock]');
-      
-      if (gridCell) {
-        const position = parseInt(gridCell.getAttribute('data-grid-index'));
-        if (dockApps.includes(movingApp.id)) {
-          setDockApps(prev => prev.filter(id => id !== movingApp.id));
+      const handleTouchEnd = (e) => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          setLongPressTimer(null);
         }
-        setAppPositions(prev => prev.map(app => 
-          app.id === movingApp.id ? { ...app, position } : app
-        ));
-      } else if (dockArea) {
-        if (!dockApps.includes(movingApp.id)) {
-          setDockApps(prev => [...prev, movingApp.id]);
+        
+        if (moveMode && movingApp) {
+          const touch = e.changedTouches[0];
+          const element = document.elementFromPoint(touch.clientX, touch.clientY);
+          
+          if (element) {
+            const gridCell = element.closest('[data-grid-index]');
+            const dockArea = element.closest('[data-dock]');
+            
+            if (gridCell) {
+              const position = parseInt(gridCell.getAttribute('data-grid-index'));
+              if (dockApps.includes(movingApp.id)) {
+                setDockApps(prev => prev.filter(id => id !== movingApp.id));
+              }
+              setAppPositions(prev => prev.map(app => 
+                app.id === movingApp.id ? { ...app, position } : app
+              ));
+            } else if (dockArea) {
+              if (!dockApps.includes(movingApp.id)) {
+                setDockApps(prev => [...prev, movingApp.id]);
+              }
+            }
+          }
+          
+          setMoveMode(false);
+          setMovingApp(null);
+          setTouchStartPos(null);
+          setShowTooltip(null);
+          return;
         }
-      }
-    }
-    
-    setMoveMode(false);
-    setMovingApp(null);
-    setTouchStartPos(null);
-    setShowTooltip(null);
-    return;
-  }
-  
-  // 通常の長押し（モバイルメニュー表示）
-  if (isDragging && draggedApp && isMobile) {
-    setShowMobileMenu(draggedApp.id);
-    setIsDragging(false);
-    setDraggedApp(null);
-  } else if (isDragging && draggedApp) {
-    // PCの場合は従来通り
-    const touch = e.changedTouches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    
-    if (element) {
-      const gridCell = element.closest('[data-grid-index]');
-      const dockArea = element.closest('[data-dock]');
-      
-      if (gridCell) {
-        const position = parseInt(gridCell.getAttribute('data-grid-index'));
-        if (dockApps.includes(draggedApp.id)) {
-          setDockApps(prev => prev.filter(id => id !== draggedApp.id));
+        
+        if (isDragging && draggedApp && isMobile) {
+          setShowMobileMenu(draggedApp.id);
+          setIsDragging(false);
+          setDraggedApp(null);
+        } else if (isDragging && draggedApp) {
+          const touch = e.changedTouches[0];
+          const element = document.elementFromPoint(touch.clientX, touch.clientY);
+          
+          if (element) {
+            const gridCell = element.closest('[data-grid-index]');
+            const dockArea = element.closest('[data-dock]');
+            
+            if (gridCell) {
+              const position = parseInt(gridCell.getAttribute('data-grid-index'));
+              if (dockApps.includes(draggedApp.id)) {
+                setDockApps(prev => prev.filter(id => id !== draggedApp.id));
+              }
+              setAppPositions(prev => prev.map(app => 
+                app.id === draggedApp.id ? { ...app, position } : app
+              ));
+            } else if (dockArea) {
+              if (!dockApps.includes(draggedApp.id)) {
+                setDockApps(prev => [...prev, draggedApp.id]);
+              }
+            }
+          }
+          
+          setIsDragging(false);
+          setDraggedApp(null);
         }
-        setAppPositions(prev => prev.map(app => 
-          app.id === draggedApp.id ? { ...app, position } : app
-        ));
-      } else if (dockArea) {
-        if (!dockApps.includes(draggedApp.id)) {
-          setDockApps(prev => [...prev, draggedApp.id]);
-        }
-      }
-    }
-    
-    setIsDragging(false);
-    setDraggedApp(null);
-  }
-  
-  setTouchStartPos(null);
-  setShowTooltip(null);
-};
+        
+        setTouchStartPos(null);
+        setShowTooltip(null);
+      };
       
       const removeDockApp = (appId) => {
         setDockApps(prev => prev.filter(id => id !== appId));
       };
 
-if (screen === 'home') {
-  const gridSize = 4 * 6; // 4列 × 6行 = 24セル
-  const grid = Array(gridSize).fill(null);
-  
-  // アイコンをグリッドに配置
-  appPositions.forEach(app => {
-    if (!dockApps.includes(app.id) && app.position !== undefined && app.position < gridSize) {
-      grid[app.position] = app;
-    }
-  });
+      if (screen === 'home') {
+        const gridSize = 4 * 6;
+        const grid = Array(gridSize).fill(null);
+        
+        appPositions.forEach(app => {
+          if (!dockApps.includes(app.id) && app.position !== undefined && app.position < gridSize) {
+            grid[app.position] = app;
+          }
+        });
 
-  const handleGridDrop = (e, position) => {
-    e.preventDefault();
-    if (!draggedApp) return;
+        const handleGridDrop = (e, position) => {
+          e.preventDefault();
+          if (!draggedApp) return;
 
-    // Dockから削除
-    if (dockApps.includes(draggedApp.id)) {
-      setDockApps(prev => prev.filter(id => id !== draggedApp.id));
-    }
+          if (dockApps.includes(draggedApp.id)) {
+            setDockApps(prev => prev.filter(id => id !== draggedApp.id));
+          }
 
-    // 新しい位置に配置
-    setAppPositions(prev => prev.map(app => 
-      app.id === draggedApp.id ? { ...app, position } : app
-    ));
-    setDraggedApp(null);
-  };
+          setAppPositions(prev => prev.map(app => 
+            app.id === draggedApp.id ? { ...app, position } : app
+          ));
+          setDraggedApp(null);
+        };
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(180deg, #1e3a5f 0%, #4a7ba7 100%)',
-      padding: '20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      position: 'relative'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        color: 'white',
-        marginBottom: '40px',
-        fontSize: '14px'
-      }}>
-        <div style={{ fontSize: '16px', fontWeight: '500' }}>
-          {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-        </div>
-        <div style={{ fontSize: '16px', fontWeight: '600', letterSpacing: '1px' }}>
-          aiPhone
-        </div>
-      </div>
-        {moveMode && (
-  <div style={{
-    textAlign: 'center',
-    color: 'white',
-    marginBottom: '20px',
-    padding: '12px',
-    background: 'rgba(255,255,255,0.2)',
-    borderRadius: '12px',
-    backdropFilter: 'blur(10px)'
-  }}>
-    📍 {movingApp?.name}の移動先をタップしてください
-    <button
-      onClick={() => {
-        setMoveMode(false);
-        setMovingApp(null);
-      }}
-      style={{
-        marginLeft: '12px',
-        padding: '6px 12px',
-        borderRadius: '8px',
-        border: 'none',
-        background: 'rgba(255,255,255,0.3)',
-        color: 'white',
-        cursor: 'pointer'
-      }}
-    >
-      キャンセル
-    </button>
-  </div>
-)}
-
-      <div style={{
-        maxWidth: '600px',
-        margin: '0 auto',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '30px',
-        padding: '20px',
-        marginBottom: '100px'
-      }}>
-        {grid.map((app, index) => (
-          <div
-            key={index}
-            data-grid-index={index}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleGridDrop(e, index)}
-            style={{
-              minHeight: '100px',
-              position: 'relative',
+        return (
+          <div style={{
+            minHeight: '100vh',
+            background: 'linear-gradient(180deg, #1e3a5f 0%, #4a7ba7 100%)',
+            padding: '20px',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            position: 'relative'
+          }}>
+            <div style={{
               display: 'flex',
-              flexDirection: 'column',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {app ? (
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, app)}
-                onClick={() => setScreen(app.id)}
-                onMouseEnter={() => !isMobile && setShowTooltip(app.id)}
-                onMouseLeave={() => !isMobile && setShowTooltip(null)}
-               onTouchStart={(e) => handleTouchStart(e, app)}
-onTouchMove={handleTouchMove}
-onTouchEnd={handleTouchEnd}
-                style={{
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  position: 'relative'
-                }}
-              >
-                <div style={{
-                  width: '80px',
-                  height: '80px',
-                  margin: '0 auto 8px',
-                  borderRadius: '18px',
-                  background: app.color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  fontSize: '40px',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                  {app.icon}
-                </div>
-                <div style={{
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                }}>
-                  {app.name}
-                </div>
-                
-                {showTooltip === app.id && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-50px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'rgba(0,0,0,0.8)',
-                    color: 'white',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    whiteSpace: 'nowrap',
-                    zIndex: 10,
-                    pointerEvents: 'none'
-                  }}>
-                    {app.description}
-                  </div>
-                )}
-                {showMobileMenu === app.id && isMobile && (
-  <div 
-    onClick={(e) => e.stopPropagation()}
-    style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.5)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}
-  >
-    <div style={{
-      background: 'white',
-      borderRadius: '16px',
-      padding: '20px',
-      minWidth: '200px'
-    }}>
-      <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
-        {app.name}
-      </div>
-      <button
-        onClick={() => {
-          setShowMobileMenu(null);
-          setScreen(app.id);
-        }}
-        style={{
-          width: '100%',
-          padding: '12px',
-          marginBottom: '8px',
-          borderRadius: '8px',
-          border: 'none',
-          background: '#007AFF',
-          color: 'white',
-          fontSize: '14px',
-          cursor: 'pointer'
-        }}
-      >
-        開く
-      </button>
-      <button
-        onClick={() => {
-          setShowMobileMenu(null);
-          setMoveMode(true);
-          setMovingApp(app);
-        }}
-        style={{
-          width: '100%',
-          padding: '12px',
-          marginBottom: '8px',
-          borderRadius: '8px',
-          border: '1px solid #007AFF',
-          background: 'white',
-          color: '#007AFF',
-          fontSize: '14px',
-          cursor: 'pointer'
-        }}
-      >
-        📍 移動する
-      </button>
-      <button
-        onClick={() => setShowMobileMenu(null)}
-        style={{
-          width: '100%',
-          padding: '12px',
-          borderRadius: '8px',
-          border: '1px solid #ccc',
-          background: 'white',
-          color: '#666',
-          fontSize: '14px',
-          cursor: 'pointer'
-        }}
-      >
-        キャンセル
-      </button>
-    </div>
-  </div>
-)}
+              color: 'white',
+              marginBottom: '40px',
+              fontSize: '14px'
+            }}>
+              <div style={{ fontSize: '16px', fontWeight: '500' }}>
+                {new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
               </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
+              <div style={{ fontSize: '16px', fontWeight: '600', letterSpacing: '1px' }}>
+                aiPhone
+              </div>
+            </div>
 
-      <div
-        data-dock="true"
-        onDragOver={handleDragOver}
-        onDrop={(e) => handleDrop(e, null, true)}
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(255,255,255,0.25)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          padding: '12px 20px',
-          display: 'flex',
-          gap: '20px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-          border: '1px solid rgba(255,255,255,0.3)',
-          minWidth: dockApps.length > 0 ? '280px' : '200px',
-          justifyContent: 'center',
-          minHeight: '84px',
-          alignItems: 'center'
-        }}
-      >
-        {dockApps.length === 0 ? (
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-            アイコンをここにドラッグ
-          </div>
-        ) : (
-          dockApps.map(appId => {
-            const app = appPositions.find(a => a.id === appId);
-            if (!app) return null;
-            
-            return (
-              <div
-                key={app.id}
-                draggable
-                onDragStart={(e) => handleDragStart(e, app)}
-                onClick={() => setScreen(app.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  if (window.confirm('Dockから削除しますか？')) {
-                    removeDockApp(app.id);
-                  }
-                }}
-                style={{
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'transform 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) translateY(-5px)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateY(0)'}
-              >
-                <div style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '14px',
-                  background: app.color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  fontSize: '32px'
-                }}>
-                  {app.icon}
-                  </div>
-<div style={{
-  color: 'rgba(255,255,255,0.9)',
-  fontSize: '10px',
-  fontWeight: '500',
-  marginTop: '4px',
-  textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-}}>
-  {app.name}
-</div>
+            {moveMode && (
+              <div style={{
+                textAlign: 'center',
+                color: 'white',
+                marginBottom: '20px',
+                padding: '12px',
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: '12px',
+                backdropFilter: 'blur(10px)'
+              }}>
+                📍 {movingApp?.name}の移動先をタップしてください
+                <button
+                  onClick={() => {
+                    setMoveMode(false);
+                    setMovingApp(null);
+                  }}
+                  style={{
+                    marginLeft: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'rgba(255,255,255,0.3)',
+                    color: 'white',
+                    cursor: 'pointer'
+                  }}
+                >
+                  キャンセル
+                </button>
               </div>
-            );
-          })
-        )}
-      </div>
-    </div>
-  );
-}
+            )}
+
+            <div style={{
+              maxWidth: '600px',
+              margin: '0 auto',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: '30px',
+              padding: '20px',
+              marginBottom: '100px'
+            }}>
+              {grid.map((app, index) => (
+                <div
+                  key={index}
+                  data-grid-index={index}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleGridDrop(e, index)}
+                  onClick={() => {
+                    if (moveMode && movingApp) {
+                      if (dockApps.includes(movingApp.id)) {
+                        setDockApps(prev => prev.filter(id => id !== movingApp.id));
+                      }
+                      setAppPositions(prev => prev.map(a => 
+                        a.id === movingApp.id ? { ...a, position: index } : a
+                      ));
+                      setMoveMode(false);
+                      setMovingApp(null);
+                    }
+                  }}
+                  style={{
+                    minHeight: '100px',
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: moveMode ? 'pointer' : 'default',
+                    background: moveMode ? 'rgba(255,255,255,0.1)' : 'transparent',
+                    borderRadius: '12px',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  {app ? (
+                    <div
+                      draggable={!moveMode}
+                      onDragStart={(e) => handleDragStart(e, app)}
+                      onClick={(e) => {
+                        if (!moveMode) {
+                          setScreen(app.id);
+                        } else {
+                          e.stopPropagation();
+                        }
+                      }}
+                      onMouseEnter={() => !isMobile && setShowTooltip(app.id)}
+                      onMouseLeave={() => !isMobile && setShowTooltip(null)}
+                      onTouchStart={(e) => {
+                        if (!moveMode) {
+                          handleTouchStart(e, app);
+                        }
+                      }}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      style={{
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        position: 'relative',
+                        pointerEvents: moveMode && movingApp?.id !== app.id ? 'none' : 'auto',
+                        opacity: moveMode && movingApp?.id === app.id ? 0.5 : 1
+                      }}
+                    >
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        margin: '0 auto 8px',
+                        borderRadius: '18px',
+                        background: app.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        fontSize: '40px',
+                        transition: 'transform 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        {app.icon}
+                      </div>
+                      <div style={{
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: '500',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                      }}>
+                        {app.name}
+                      </div>
+                      
+                      {showTooltip === app.id && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '-50px',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          background: 'rgba(0,0,0,0.8)',
+                          color: 'white',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          whiteSpace: 'nowrap',
+                          zIndex: 10,
+                          pointerEvents: 'none'
+                        }}>
+                          {app.description}
+                        </div>
+                      )}
+
+                      {showMobileMenu === app.id && isMobile && (
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0,0,0,0.5)',
+                            zIndex: 1000,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <div style={{
+                            background: 'white',
+                            borderRadius: '16px',
+                            padding: '20px',
+                            minWidth: '200px'
+                          }}>
+                            <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 'bold', textAlign: 'center' }}>
+                              {app.name}
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowMobileMenu(null);
+                                setScreen(app.id);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px',
+                                marginBottom: '8px',
+                                borderRadius: '8px',
+                                border: 'none',
+                                background: '#007AFF',
+                                color: 'white',
+                                fontSize: '14px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              開く
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowMobileMenu(null);
+                                setMoveMode(true);
+                                setMovingApp(app);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px',
+                                marginBottom: '8px',
+                                borderRadius: '8px',
+                                border: '1px solid #007AFF',
+                                background: 'white',
+                                color: '#007AFF',
+                                fontSize: '14px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              📍 移動する
+                            </button>
+                            <button
+                              onClick={() => setShowMobileMenu(null)}
+                              style={{
+                                width: '100%',
+                                padding: '12px',
+                                borderRadius: '8px',
+                                border: '1px solid #ccc',
+                                background: 'white',
+                                color: '#666',
+                                fontSize: '14px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              キャンセル
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+
+            <div
+              data-dock="true"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, null, true)}
+              onClick={() => {
+                if (moveMode && movingApp) {
+                  if (!dockApps.includes(movingApp.id)) {
+                    setDockApps(prev => [...prev, movingApp.id]);
+                  }
+                  setMoveMode(false);
+                  setMovingApp(null);
+                }
+              }}
+              style={{
+                position: 'fixed',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(255,255,255,0.25)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '24px',
+                padding: '12px 20px',
+                display: 'flex',
+                gap: '20px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                border: moveMode ? '2px solid rgba(255,255,255,0.8)' : '1px solid rgba(255,255,255,0.3)',
+                minWidth: dockApps.length > 0 ? '280px' : '200px',
+                justifyContent: 'center',
+                minHeight: '84px',
+                alignItems: 'center',
+                cursor: moveMode ? 'pointer' : 'default'
+              }}
+            >
+              {dockApps.length === 0 ? (
+                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
+                  {moveMode ? 'ここをタップでDockに追加' : 'アイコンをここにドラッグ'}
+                </div>
+              ) : (
+                dockApps.map(appId => {
+                  const app = appPositions.find(a => a.id === appId);
+                  if (!app) return null;
+                  
+                  return (
+                    <div
+                      key={app.id}
+                      draggable={!moveMode}
+                      onDragStart={(e) => handleDragStart(e, app)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (!moveMode) {
+                          setScreen(app.id);
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        if (!moveMode && window.confirm('Dockから削除しますか？')) {
+                          removeDockApp(app.id);
+                        }
+                      }}
+                      style={{
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'transform 0.2s',
+                        pointerEvents: moveMode && movingApp?.id !== app.id ? 'none' : 'auto',
+                        opacity: moveMode && movingApp?.id === app.id ? 0.5 : 1
+                      }}
+                      onMouseEnter={(e) => !moveMode && (e.currentTarget.style.transform = 'scale(1.1) translateY(-5px)')}
+                      onMouseLeave={(e) => !moveMode && (e.currentTarget.style.transform = 'scale(1) translateY(0)')}
+                    >
+                      <div style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '14px',
+                        background: app.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                        fontSize: '32px'
+                      }}>
+                        {app.icon}
+                      </div>
+                      <div style={{
+                        color: 'rgba(255,255,255,0.9)',
+                        fontSize: '10px',
+                        fontWeight: '500',
+                        marginTop: '4px',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.5)'
+                      }}>
+                        {app.name}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
           <div style={{
-           background: screen === 'pronpa' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : screen === 'nankuru' ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+            background: screen === 'pronpa' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : screen === 'nankuru' ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
             color: 'white', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}>
@@ -788,7 +947,7 @@ onTouchEnd={handleTouchEnd}
             </button>
           </div>
 
-          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px' }}>
+          <div ref={chatContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px', position: 'relative' }}>
             {currentMessages.map((msg, idx) => (
               <div key={idx} style={{
                 marginBottom: '16px', display: 'flex',
@@ -846,6 +1005,35 @@ onTouchEnd={handleTouchEnd}
             )}
             
             <div ref={messagesEndRef} />
+            
+            {userScrolled && (isStreaming[screen] || isThinking[screen]) && (
+              <button
+                onClick={() => {
+                  setUserScrolled(false);
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{
+                  position: 'fixed',
+                  bottom: '100px',
+                  right: '20px',
+                  background: '#007AFF',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '24px',
+                  padding: '12px 20px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  zIndex: 100,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                ↓ 最新
+              </button>
+            )}
           </div>
 
           <div style={{
@@ -888,12 +1076,3 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
