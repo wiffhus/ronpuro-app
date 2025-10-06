@@ -59,13 +59,18 @@
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
       const [longPressTimer, setLongPressTimer] = useState(null);
-      const [isDragging, setIsDragging] = useState(false);  
-      const [touchStartPos, setTouchStartPos] = useState(null); 
+      const [isDragging, setIsDragging] = useState(false);
+      const [touchStartPos, setTouchStartPos] = useState(null);
       const [moveMode, setMoveMode] = useState(false);
       const [movingApp, setMovingApp] = useState(null);
       const [showMobileMenu, setShowMobileMenu] = useState(null);
+      const [userScrolled, setUserScrolled] = useState(false);
+      const [isUserInteracting, setIsUserInteracting] = useState(false);
+      
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
+      const chatContainerRef = useRef(null);
+      const scrollTimeoutRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       useEffect(() => {
@@ -89,23 +94,59 @@
         }
       }, [screen]);
 
-      const [userScrolled, setUserScrolled] = useState(false);
-      const chatContainerRef = useRef(null);
-
       useEffect(() => {
         const handleScroll = () => {
           if (!chatContainerRef.current) return;
           
           const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
-          const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+          const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
           
-          setUserScrolled(!isAtBottom);
+          if (!isAtBottom) {
+            setUserScrolled(true);
+          } else {
+            setUserScrolled(false);
+          }
+        };
+        
+        const handleWheel = () => {
+          setIsUserInteracting(true);
+          if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+          }
+          scrollTimeoutRef.current = setTimeout(() => {
+            setIsUserInteracting(false);
+          }, 150);
+        };
+        
+        const handleTouchStart = () => {
+          setIsUserInteracting(true);
+        };
+        
+        const handleTouchEnd = () => {
+          if (scrollTimeoutRef.current) {
+            clearTimeout(scrollTimeoutRef.current);
+          }
+          scrollTimeoutRef.current = setTimeout(() => {
+            setIsUserInteracting(false);
+          }, 150);
         };
         
         const container = chatContainerRef.current;
         if (container) {
           container.addEventListener('scroll', handleScroll);
-          return () => container.removeEventListener('scroll', handleScroll);
+          container.addEventListener('wheel', handleWheel, { passive: true });
+          container.addEventListener('touchstart', handleTouchStart, { passive: true });
+          container.addEventListener('touchend', handleTouchEnd, { passive: true });
+          
+          return () => {
+            container.removeEventListener('scroll', handleScroll);
+            container.removeEventListener('wheel', handleWheel);
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchend', handleTouchEnd);
+            if (scrollTimeoutRef.current) {
+              clearTimeout(scrollTimeoutRef.current);
+            }
+          };
         }
       }, [screen]);
       
@@ -147,7 +188,6 @@
       }, [dockApps]);
 
       const scrollToBottom = () => {
-        // ユーザーが操作中、または意図的にスクロールした場合は自動スクロールしない
         if (!userScrolled && !isUserInteracting && messagesEndRef.current) {
           messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
@@ -159,18 +199,15 @@
 
       const currentMessages = messages[screen] || [];
 
-      // 不安ちゃん専用：バックスペースアニメーション
       const typeWithHesitation = async (text, screen) => {
         const chars = text.split('');
         let displayedText = '';
         
-        // 20%の確率で途中で躊躇する
         const shouldHesitate = Math.random() < 0.2;
         const hesitationPoint = shouldHesitate ? Math.floor(chars.length * (0.3 + Math.random() * 0.4)) : -1;
         
         for (let i = 0; i < chars.length; i++) {
           if (i === hesitationPoint) {
-            // 躊躇ポイント：「あ、やっぱり...」を追加
             const hesitationText = '\n\nあ、やっぱり...';
             for (let j = 0; j < hesitationText.length; j++) {
               displayedText += hesitationText[j];
@@ -187,7 +224,6 @@
             
             await new Promise(resolve => setTimeout(resolve, 500));
             
-            // バックスペースで消していく
             const deleteLength = displayedText.length;
             for (let j = 0; j < deleteLength; j++) {
               displayedText = displayedText.slice(0, -1);
@@ -204,11 +240,9 @@
             
             await new Promise(resolve => setTimeout(resolve, 300));
             
-            // 3つの選択肢：書き直す(40%) / やめる(30%) / URLだけ(30%)
             const choice = Math.random();
             
             if (choice < 0.3) {
-              // やめるパターン
               const giveUpTexts = [
                 'やっぱり答えるのやめとく...',
                 'ん〜、やっぱり無理かも...',
@@ -229,9 +263,8 @@
                 });
                 await new Promise(resolve => setTimeout(resolve, 50));
               }
-              return; // ここで終了
+              return;
             } else if (choice < 0.6) {
-              // URLだけ提供パターン
               const urlIntros = [
                 'ごめん、やっぱりわかんないから、これ読んでみて...\n\n',
                 'う〜ん、自信ないから...これ見たほうがいいかも...\n\n',
@@ -240,7 +273,6 @@
               ];
               const intro = urlIntros[Math.floor(Math.random() * urlIntros.length)];
               
-              // 検索キーワードを抽出してURLを生成（簡易版）
               const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(text.substring(0, 50))}`;
               const urlText = intro + `[Google検索結果](${searchUrl})`;
               
@@ -256,9 +288,8 @@
                 });
                 await new Promise(resolve => setTimeout(resolve, 30));
               }
-              return; // ここで終了
+              return;
             }
-            // else: 書き直すので処理を続行
           }
           
           displayedText += chars[i];
@@ -348,11 +379,9 @@
           const data = await response.json();
           const text = data.text || data.error || 'エラーが発生しました';
 
-          // 不安ちゃんは特別なタイピング演出
           if (screen === 'fuan') {
             await typeWithHesitation(text, screen);
           } else {
-            // 通常のストリーミング
             let displayedText = '';
             const chars = text.split('');
             
