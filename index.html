@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ろんぷろ君 / ナンクルナイさん</title>
+  <title>ぷろんぱ君 / ナンクルナイさん</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -16,6 +16,11 @@
     * {
       box-sizing: border-box;
     }
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
   </style>
 </head>
 <body>
@@ -26,10 +31,10 @@
 
     function App() {
       const [screen, setScreen] = useState('home');
-      const [messages, setMessages] = useState([]);
+      const [messages, setMessages] = useState({});
       const [input, setInput] = useState('');
       const [isStreaming, setIsStreaming] = useState(false);
-      const [enterCount, setEnterCount] = useState(0);
+      const [isThinking, setIsThinking] = useState(false);
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -40,97 +45,112 @@
 
       useEffect(() => {
         scrollToBottom();
-      }, [messages]);
+      }, [messages, isThinking]);
 
-const handleSend = async () => {
-  if (!input.trim() || isStreaming) return;
+      const currentMessages = messages[screen] || [];
 
-  const userMessage = input.trim();
-  setInput('');
-  setEnterCount(0);
+      const handleSend = async () => {
+        if (!input.trim() || isStreaming) return;
 
-  setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-  setIsStreaming(true);
+        const userMessage = input.trim();
+        setInput('');
 
-  const systemPrompt = screen === 'ronpuro'
-    ? `あなたは「ろんぷろ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
+        setMessages(prev => ({
+          ...prev,
+          [screen]: [...(prev[screen] || []), { role: 'user', content: userMessage }]
+        }));
+        
+        setIsThinking(true);
+        setIsStreaming(true);
+
+        const systemPrompt = screen === 'pronpa'
+          ? `あなたは「ぷろんぱ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
 1. ユニークさ、ユーモアは一切排除
-2. AI検索で多岐にわたる根拠を調査
+2. 多岐にわたる根拠を調査
 3. 現実的にユーザーのクエリや気持ち、入力、あいさつでさえも論理的に否定
 4. 短い返答は不可。完膚なきまでに論破するため、中〜長文で
 5. スタイルは常に冷たい敬語
 6. 強調したい部分は**太字**で囲む
-7. 根拠となるURLがある場合は[リンクテキスト](URL)形式で
-8. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-    : `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
-1. AI検索の大量の情報から、論理的に完全に肯定
+7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
+8. 根拠となる情報源のURLも必ず提供する
+9. 現在日時: ${new Date().toLocaleString('ja-JP')}`
+          : `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
+1. 大量の情報から、論理的に完全に肯定
 2. ただただ寄り添うのではなく、理論的・現実的・学術的、その他堅固な根拠の上で肯定
-3. 出力スタイルは冷静な出力を保つ（冷たくはならない）
-4. 中〜長文で返答
-5. 強調したい部分は**太字**で囲む
-6. 根拠となるURLがある場合は[リンクテキスト](URL)形式で
-7. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
+3. 出力スタイルは明るく、冷静で、雰囲気でも肯定感を強く表現
+4. 情報だけでなく、励ましや前向きな言葉も含める
+5. 中〜長文で返答
+6. 強調したい部分は**太字**で囲む
+7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
+8. おすすめの場所や施設を提案する場合は、その公式サイトや詳細情報のURLを必ず提供
+9. 根拠となる情報源のURLも必ず提供する
+10. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
-  // 空のメッセージを追加（ストリーミング表示用）
-  setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+        setMessages(prev => ({
+          ...prev,
+          [screen]: [...(prev[screen] || []), { role: 'assistant', content: '' }]
+        }));
 
-  try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: userMessage,
-        systemPrompt: systemPrompt
-      })
-    });
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: userMessage,
+              systemPrompt: systemPrompt
+            })
+          });
 
-    if (!response.ok) throw new Error('API request failed');
+          setIsThinking(false);
 
-    const data = await response.json();
-    const text = data.text || data.error || 'エラーが発生しました';
+          if (!response.ok) throw new Error('API request failed');
 
-    // 疑似ストリーミング: 文字を1つずつ表示
-    let displayedText = '';
-    const chars = text.split('');
-    
-    for (let i = 0; i < chars.length; i++) {
-      displayedText += chars[i];
-      setMessages(prev => {
-        const newMessages = [...prev];
-        newMessages[newMessages.length - 1] = {
-          role: 'assistant',
-          content: displayedText
-        };
-        return newMessages;
-      });
-      
-      // 表示速度を調整（ミリ秒）
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
+          const data = await response.json();
+          const text = data.text || data.error || 'エラーが発生しました';
 
-  } catch (error) {
-    console.error('Error:', error);
-    setMessages(prev => {
-      const newMessages = [...prev];
-      newMessages[newMessages.length - 1] = {
-        role: 'assistant',
-        content: 'エラーが発生しました。もう一度お試しください。'
-      };
-      return newMessages;
-    });
-  } finally {
-    setIsStreaming(false);
-  }
-};
-      const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
-          if (enterCount === 0) {
-            setEnterCount(1);
-            setTimeout(() => setEnterCount(0), 500);
-          } else {
-            e.preventDefault();
-            handleSend();
+          let displayedText = '';
+          const chars = text.split('');
+          
+          for (let i = 0; i < chars.length; i++) {
+            displayedText += chars[i];
+            setMessages(prev => {
+              const screenMessages = [...(prev[screen] || [])];
+              screenMessages[screenMessages.length - 1] = {
+                role: 'assistant',
+                content: displayedText
+              };
+              return { ...prev, [screen]: screenMessages };
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 10));
           }
+
+        } catch (error) {
+          console.error('Error:', error);
+          setIsThinking(false);
+          setMessages(prev => {
+            const screenMessages = [...(prev[screen] || [])];
+            screenMessages[screenMessages.length - 1] = {
+              role: 'assistant',
+              content: 'エラーが発生しました。もう一度お試しください。'
+            };
+            return { ...prev, [screen]: screenMessages };
+          });
+        } finally {
+          setIsStreaming(false);
+        }
+      };
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleSend();
+        }
+      };
+
+      const clearChat = () => {
+        if (window.confirm('チャット履歴を削除しますか？')) {
+          setMessages(prev => ({ ...prev, [screen]: [] }));
         }
       };
 
@@ -166,7 +186,7 @@ const handleSend = async () => {
                 gap: '40px',
                 padding: '20px'
               }}>
-                <div onClick={() => { setScreen('ronpuro'); setMessages([]);}} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                <div onClick={() => setScreen('pronpa')} style={{ cursor: 'pointer', textAlign: 'center' }} title="完膚なきまでに論破します">
                   <div style={{
                     width: '120px', height: '120px', margin: '0 auto 12px', borderRadius: '24px',
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -179,11 +199,11 @@ const handleSend = async () => {
                     ⚔️
                   </div>
                   <div style={{ color: 'white', fontSize: '14px', fontWeight: '500', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                    ろんぷろ君
+                    ぷろんぱ君
                   </div>
                 </div>
 
-                <div onClick={() => { setScreen('nankuru'); setMessages([]);}} style={{ cursor: 'pointer', textAlign: 'center' }}>
+                <div onClick={() => setScreen('nankuru')} style={{ cursor: 'pointer', textAlign: 'center' }} title="論理的に完全肯定します">
                   <div style={{
                     width: '120px', height: '120px', margin: '0 auto 12px', borderRadius: '24px',
                     background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
@@ -215,21 +235,29 @@ const handleSend = async () => {
       return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
           <div style={{
-            background: screen === 'ronpuro' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
+            background: screen === 'pronpa' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+            color: 'white', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}>
-            <button onClick={() => setScreen('home')} style={{
-              background: 'none', border: 'none', color: 'white', fontSize: '24px',
-              cursor: 'pointer', marginRight: '12px'
-            }}>←</button>
-            <div style={{ fontSize: '18px', fontWeight: '600' }}>
-              {screen === 'ronpuro' ? 'ろんぷろ君' : 'ナンクルナイさん'}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <button onClick={() => setScreen('home')} style={{
+                background: 'none', border: 'none', color: 'white', fontSize: '24px',
+                cursor: 'pointer', marginRight: '12px'
+              }}>←</button>
+              <div style={{ fontSize: '18px', fontWeight: '600' }}>
+                {screen === 'pronpa' ? 'ぷろんぱ君' : 'ナンクルナイさん'}
+              </div>
             </div>
+            <button onClick={clearChat} style={{
+              background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white',
+              padding: '8px 16px', borderRadius: '12px', cursor: 'pointer', fontSize: '14px'
+            }}>
+              🗑️ チャット消去
+            </button>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px' }}>
-            {messages.map((msg, idx) => (
+            {currentMessages.map((msg, idx) => (
               <div key={idx} style={{
                 marginBottom: '16px', display: 'flex',
                 justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
@@ -246,6 +274,23 @@ const handleSend = async () => {
                 }} />
               </div>
             ))}
+            
+            {isThinking && (
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{
+                  padding: '12px 16px', borderRadius: '18px', background: 'white',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  思考中<span style={{ 
+                    animation: 'dots 1.5s infinite',
+                    display: 'inline-block',
+                    width: '20px'
+                  }}>...</span>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
@@ -259,7 +304,7 @@ const handleSend = async () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={isMobile ? "メッセージを入力..." : "メッセージを入力... (Enterキー2回で送信)"}
+              placeholder={isMobile ? "メッセージを入力..." : "メッセージ入力 (Shift+Enterで改行)"}
               disabled={isStreaming}
               style={{
                 flex: 1, padding: '12px', borderRadius: '20px', border: '1px solid #e0e0e0',
@@ -288,6 +333,4 @@ const handleSend = async () => {
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
-
 </html>
-
