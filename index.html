@@ -294,7 +294,71 @@ useEffect(() => {
         setDraggedApp(null);
       };
 
+const handleTouchStart = (e, app) => {
+  const touch = e.touches[0];
+  setTouchStartPos({ x: touch.clientX, y: touch.clientY, app });
+  
+  const timer = setTimeout(() => {
+    setIsDragging(true);
+    setDraggedApp(app);
+    setShowTooltip(app.id);
+  }, 500);
+  setLongPressTimer(timer);
+};
 
+const handleTouchMove = (e) => {
+  if (longPressTimer && touchStartPos) {
+    const touch = e.touches[0];
+    const distance = Math.sqrt(
+      Math.pow(touch.clientX - touchStartPos.x, 2) + 
+      Math.pow(touch.clientY - touchStartPos.y, 2)
+    );
+    
+    if (distance > 10) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  }
+};
+
+const handleTouchEnd = (e) => {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    setLongPressTimer(null);
+  }
+  
+  if (isDragging && draggedApp) {
+    const touch = e.changedTouches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    
+    if (element) {
+      const gridCell = element.closest('[data-grid-index]');
+      const dockArea = element.closest('[data-dock]');
+      
+      if (gridCell) {
+        const position = parseInt(gridCell.getAttribute('data-grid-index'));
+        // handleGridDropはif文の中で定義されているので、ここでは直接位置を更新
+        if (dockApps.includes(draggedApp.id)) {
+          setDockApps(prev => prev.filter(id => id !== draggedApp.id));
+        }
+        setAppPositions(prev => prev.map(app => 
+          app.id === draggedApp.id ? { ...app, position } : app
+        ));
+      } else if (dockArea) {
+        if (!dockApps.includes(draggedApp.id) && dockApps.length < 4) {
+          setDockApps(prev => [...prev, draggedApp.id]);
+        }
+      }
+    }
+    
+    setIsDragging(false);
+    setDraggedApp(null);
+  }
+  
+  setTouchStartPos(null);
+  setShowTooltip(null);
+};
+      
       const removeDockApp = (appId) => {
         setDockApps(prev => prev.filter(id => id !== appId));
       };
@@ -639,6 +703,7 @@ onTouchEnd={handleTouchEnd}
   </script>
 </body>
 </html>
+
 
 
 
