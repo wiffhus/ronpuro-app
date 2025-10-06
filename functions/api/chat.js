@@ -19,12 +19,30 @@ export async function onRequest(context) {
   }
 
   try {
-    const { message, systemPrompt } = await request.json();
+    const { message, systemPrompt, history = [] } = await request.json();
     const API_KEY = env.GOOGLE_API_KEY;
 
     if (!API_KEY) {
       throw new Error('API key not configured');
     }
+
+    // 会話履歴をGemini API形式に変換
+    const contents = [
+      { role: 'user', parts: [{ text: systemPrompt }] },
+      { role: 'model', parts: [{ text: '承知しました。ルールに従って応答します。' }] }
+    ];
+
+    // 過去の会話を追加
+    history.forEach(msg => {
+      if (msg.role === 'user') {
+        contents.push({ role: 'user', parts: [{ text: msg.content }] });
+      } else if (msg.role === 'assistant' && msg.content) {
+        contents.push({ role: 'model', parts: [{ text: msg.content }] });
+      }
+    });
+
+    // 現在のメッセージを追加
+    contents.push({ role: 'user', parts: [{ text: message }] });
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
@@ -32,9 +50,7 @@ export async function onRequest(context) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            { role: 'user', parts: [{ text: systemPrompt + '\n\nユーザー: ' + message }] }
-          ],
+          contents: contents,
           generationConfig: {
             temperature: 0.9,
             maxOutputTokens: 8192,
@@ -50,10 +66,7 @@ export async function onRequest(context) {
 
     const data = await response.json();
     
-    // デバッグ: レスポンス全体を返す
     return new Response(JSON.stringify({ 
-      debug: true,
-      fullResponse: data,
       text: data.candidates?.[0]?.content?.parts?.[0]?.text || 'テキストが見つかりません'
     }), {
       headers: {
