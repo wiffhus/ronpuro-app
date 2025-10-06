@@ -257,39 +257,61 @@
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: '100px' }}>
-            {currentMessages.map((msg, idx) => (
-              <div key={idx} style={{
-                marginBottom: '16px', display: 'flex',
-                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
-              }}>
-                <div style={{
-                  maxWidth: '80%', padding: '12px 16px', borderRadius: '18px',
-                  background: msg.role === 'user' ? '#007AFF' : 'white',
-                  color: msg.role === 'user' ? 'white' : '#000',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                  whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6'
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: msg.role === 'assistant' ? formatMessage(msg.content) : msg.content
-                }} />
-              </div>
-            ))}
+           {currentMessages.map((msg, idx) => (
+  <div key={idx} style={{
+    marginBottom: '16px', display: 'flex',
+    justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+    alignItems: 'flex-end',
+    gap: '8px'
+  }}>
+    <div style={{
+      maxWidth: '80%', padding: '12px 16px', borderRadius: '18px',
+      background: msg.role === 'user' ? '#007AFF' : 'white',
+      color: msg.role === 'user' ? 'white' : '#000',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+      whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.6'
+    }}
+    dangerouslySetInnerHTML={{
+      __html: msg.role === 'assistant' ? formatMessage(msg.content) : msg.content
+    }} />
+    
+    {msg.role === 'assistant' && msg.content && (
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(msg.content);
+          alert('コピーしました！');
+        }}
+        style={{
+          background: 'white',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          padding: '6px 8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          color: '#666',
+          flexShrink: 0
+        }}
+        title="コピー"
+      >
+        📋
+      </button>
+    )}
+  </div>
+))}
             
-            {isThinking && (
-              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{
-                  padding: '12px 16px', borderRadius: '18px', background: 'white',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#666',
-                  fontStyle: 'italic'
-                }}>
-                  思考中<span style={{ 
-                    animation: 'dots 1.5s infinite',
-                    display: 'inline-block',
-                    width: '20px'
-                  }}>...</span>
-                </div>
-              </div>
-            )}
+         {isThinking && (
+  <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+    <div style={{
+      padding: '12px 16px', borderRadius: '18px', background: 'white',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.1)', color: '#666'
+    }}>
+      思考中
+      <span className="thinking-dot"></span>
+      <span className="thinking-dot"></span>
+      <span className="thinking-dot"></span>
+    </div>
+  </div>
+)}
             
             <div ref={messagesEndRef} />
           </div>
@@ -334,3 +356,4 @@
   </script>
 </body>
 </html>
+
