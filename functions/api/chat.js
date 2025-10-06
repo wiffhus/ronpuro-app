@@ -1,14 +1,12 @@
 export async function onRequest(context) {
   const { request, env } = context;
   
-  // CORSヘッダーの設定
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // OPTIONSリクエスト（プリフライト）への対応
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -22,25 +20,21 @@ export async function onRequest(context) {
 
   try {
     const { message, systemPrompt } = await request.json();
-    const API_KEY = env.GOOGLE_API_KEY; // 環境変数から取得
+    const API_KEY = env.GOOGLE_API_KEY;
 
     if (!API_KEY) {
-      return new Response(JSON.stringify({ error: 'API key not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      throw new Error('API key not configured');
     }
 
+    // 非ストリーミング版に変更
     const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?key=${API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [
-            { role: 'user', parts: [{ text: systemPrompt }] },
-            { role: 'model', parts: [{ text: '承知しました。ルールに従って応答します。' }] },
-            { role: 'user', parts: [{ text: message }] }
+            { role: 'user', parts: [{ text: systemPrompt + '\n\nユーザー: ' + message }] }
           ],
           generationConfig: {
             temperature: 0.9,
@@ -51,14 +45,17 @@ export async function onRequest(context) {
     );
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
-    return new Response(response.body, {
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラー: 応答がありません';
+
+    return new Response(JSON.stringify({ text }), {
       headers: {
         ...corsHeaders,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Content-Type': 'application/json',
       }
     });
 
