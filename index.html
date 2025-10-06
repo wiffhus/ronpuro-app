@@ -325,6 +325,9 @@
 
         const userMessage = input.trim();
         setInput('');
+        
+        // メッセージ送信時に自動スクロールを有効化
+        setUserScrolled(false);
 
         setMessages(prev => ({
           ...prev,
