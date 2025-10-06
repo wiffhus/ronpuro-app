@@ -62,6 +62,35 @@
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      // localStorageから復元
+useEffect(() => {
+  const savedMessages = localStorage.getItem('aiphone_messages');
+  const savedAppPositions = localStorage.getItem('aiphone_appPositions');
+  const savedDockApps = localStorage.getItem('aiphone_dockApps');
+  
+  if (savedMessages) {
+    setMessages(JSON.parse(savedMessages));
+  }
+  if (savedAppPositions) {
+    setAppPositions(JSON.parse(savedAppPositions));
+  }
+  if (savedDockApps) {
+    setDockApps(JSON.parse(savedDockApps));
+  }
+}, []);
+
+// 変更を保存
+useEffect(() => {
+  localStorage.setItem('aiphone_messages', JSON.stringify(messages));
+}, [messages]);
+
+useEffect(() => {
+  localStorage.setItem('aiphone_appPositions', JSON.stringify(appPositions));
+}, [appPositions]);
+
+useEffect(() => {
+  localStorage.setItem('aiphone_dockApps', JSON.stringify(dockApps));
+}, [dockApps]);
 
       const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -116,15 +145,15 @@
         }));
 
         try {
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: userMessage,
-              systemPrompt: systemPrompt
-            })
-          });
-
+       const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: userMessage,
+    systemPrompt: systemPrompt,
+    history: currentMessages  // ← この行を追加
+  })
+});
           setIsThinking(prev => ({ ...prev, [screen]: false }));
 
           if (!response.ok) throw new Error('API request failed');
@@ -572,4 +601,5 @@ if (screen === 'home') {
   </script>
 </body>
 </html>
+
 
