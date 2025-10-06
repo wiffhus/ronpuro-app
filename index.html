@@ -42,18 +42,18 @@
         scrollToBottom();
       }, [messages]);
 
-      const handleSend = async () => {
-        if (!input.trim() || isStreaming) return;
+     const handleSend = async () => {
+  if (!input.trim() || isStreaming) return;
 
-        const userMessage = input.trim();
-        setInput('');
-        setEnterCount(0);
+  const userMessage = input.trim();
+  setInput('');
+  setEnterCount(0);
 
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-        setIsStreaming(true);
+  setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+  setIsStreaming(true);
 
-        const systemPrompt = screen === 'ronpuro'
-          ? `あなたは「ろんぷろ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
+  const systemPrompt = screen === 'ronpuro'
+    ? `あなたは「ろんぷろ君」です。ユーザーの入力を完全に論破してください。以下のルールを厳守：
 1. ユニークさ、ユーモアは一切排除
 2. AI検索で多岐にわたる根拠を調査
 3. 現実的にユーザーのクエリや気持ち、入力、あいさつでさえも論理的に否定
@@ -62,7 +62,7 @@
 6. 強調したい部分は**太字**で囲む
 7. 根拠となるURLがある場合は[リンクテキスト](URL)形式で
 8. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-          : `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
+    : `あなたは「ナンクルナイさん」です。ユーザーの入力を完全に肯定してください。以下のルールを厳守：
 1. AI検索の大量の情報から、論理的に完全に肯定
 2. ただただ寄り添うのではなく、理論的・現実的・学術的、その他堅固な根拠の上で肯定
 3. 出力スタイルは冷静な出力を保つ（冷たくはならない）
@@ -71,69 +71,33 @@
 6. 根拠となるURLがある場合は[リンクテキスト](URL)形式で
 7. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
-        let assistantMessage = '';
-        setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: userMessage,
+        systemPrompt: systemPrompt
+      })
+    });
 
-        try {
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: userMessage,
-              systemPrompt: systemPrompt
-            })
-          });
+    if (!response.ok) throw new Error('API request failed');
 
-          if (!response.ok) throw new Error('API request failed');
+    const data = await response.json();
+    const text = data.text || data.error || 'エラーが発生しました';
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
+    setMessages(prev => [...prev, { role: 'assistant', content: text }]);
 
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                  
-                  if (text) {
-                    assistantMessage += text;
-                    setMessages(prev => {
-                      const newMessages = [...prev];
-                      newMessages[newMessages.length - 1] = {
-                        role: 'assistant',
-                        content: assistantMessage
-                      };
-                      return newMessages;
-                    });
-                  }
-                } catch (e) {
-                  // JSON parse error, skip
-                }
-              }
-            }
-          }
-
-        } catch (error) {
-          console.error('Error:', error);
-          setMessages(prev => {
-            const newMessages = [...prev];
-            newMessages[newMessages.length - 1] = {
-              role: 'assistant',
-              content: 'エラーが発生しました。もう一度お試しください。'
-            };
-            return newMessages;
-          });
-        } finally {
-          setIsStreaming(false);
-        }
-      };
+  } catch (error) {
+    console.error('Error:', error);
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: 'エラーが発生しました。もう一度お試しください。' 
+    }]);
+  } finally {
+    setIsStreaming(false);
+  }
+};
 
       const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
@@ -301,4 +265,5 @@
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
+
 </html>
