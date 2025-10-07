@@ -18,6 +18,17 @@
     }
     * {
       box-sizing: border-box;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    textarea, input {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
     }
     .home-screen {
       -webkit-user-select: none;
@@ -69,13 +80,20 @@
         transform: scale(0.1) translateY(-200%);
       }
     }
-
-    @keyframes crawl {
+    @keyframes crawlMobile {
       0% {
         transform: rotateX(25deg) translateY(100%);
       }
       100% {
-        transform: rotateX(25deg) translateY(-200%);
+        transform: rotateX(25deg) translateY(-100vh);
+      }
+    }
+    @keyframes crawlDesktop {
+      0% {
+        transform: rotateX(25deg) translateY(100%);
+      }
+      100% {
+        transform: rotateX(25deg) translateY(-50vh);
       }
     }
     .star {
@@ -108,8 +126,13 @@
       line-height: 1.8;
       transform: rotateX(25deg);
       transform-origin: bottom center;
-      animation: crawl 30s linear forwards;
       pointer-events: none;
+    }
+    .crawl.mobile {
+      animation: crawlMobile 30s linear forwards;
+    }
+    .crawl.desktop {
+      animation: crawlDesktop 30s linear forwards;
     }
     .title-display {
       position: absolute;
@@ -125,9 +148,6 @@
       text-shadow: 0 0 30px rgba(254, 218, 74, 0.9);
       pointer-events: none;
       perspective: 1000px;
-    }
-    .screen-darken {
-      animation: screenDarken 4s ease-out forwards;
     }
     .history-star {
       position: absolute;
@@ -161,6 +181,21 @@
     .sphere-button:active {
       transform: scale(0.95);
     }
+    .static-response {
+      width: 90%;
+      max-width: 800px;
+      margin: 100px auto 100px;
+      color: #feda4a;
+      font-size: 20px;
+      font-weight: bold;
+      line-height: 1.8;
+      text-align: justify;
+      padding: 20px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -175,13 +210,13 @@
       const [input, setInput] = useState('');
       const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
       const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
-     const [appPositions, setAppPositions] = useState([
-  { id: 'pronpa', name: 'しろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
-  { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
-  { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
-  { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
-  { id: 'settings', name: '設定', icon: '⚙️', color: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)', description: 'アプリの設定', position: 4 },  // 追加
-]);
+      const [appPositions, setAppPositions] = useState([
+        { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
+        { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
+        { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
+        { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
+        { id: 'settings', name: '設定', icon: '⚙️', color: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)', description: 'アプリの設定', position: 4 },
+      ]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
@@ -198,6 +233,7 @@
       // Star Wars specific states
       const [showTitle, setShowTitle] = useState(false);
       const [showCrawl, setCrawl] = useState(false);
+      const [showStaticResponse, setShowStaticResponse] = useState(false);
       const [currentQuery, setCurrentQuery] = useState('');
       const [currentResponse, setCurrentResponse] = useState('');
       const [historyStars, setHistoryStars] = useState([]);
@@ -209,15 +245,13 @@
       const messagesEndRef = useRef(null);
       const chatContainerRef = useRef(null);
       const scrollTimeoutRef = useRef(null);
+      const crawlTimeoutRef = useRef(null);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
       useEffect(() => {
         const timer = setInterval(() => {
           setCurrentTime(new Date());
         }, 1000);
-
-
-        
         return () => clearInterval(timer);
       }, []);
 
@@ -303,7 +337,7 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '2.1';
+        const APP_VERSION = '2.2';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
@@ -483,41 +517,42 @@
       const handleSend = async () => {
         if (!input.trim() || isStreaming[screen]) return;
 
-         // 既存の出力中の場合、即座に履歴化
-  if (screen === 'starwars' && showCrawl) {
-    setCrawl(false);
-    const currentMsg = messages.starwars;
-    if (currentMsg && currentMsg.length >= 2) {
-      const lastResponse = currentMsg[currentMsg.length - 1].content;
-      const lastQuery = currentMsg[currentMsg.length - 2].content;
-      
-      if (lastResponse && lastQuery) {
-        const responseLength = lastResponse.length;
-        const starSize = Math.min(Math.max(responseLength / 50, 15), 40);
-        
-        const newStar = {
-          id: Date.now(),
-          query: lastQuery,
-          response: lastResponse,
-          episode: episodeNumber,
-          x: Math.random() * 85 + 5,
-          y: Math.random() * 65 + 10,
-          size: starSize
-        };
-        setHistoryStars(prev => [...prev, newStar]);
-        setEpisodeNumber(prev => prev + 1);
-      }
-    }
-  }
+        // 既存の出力中の場合、即座に履歴化
+        if (screen === 'starwars' && showCrawl) {
+          if (crawlTimeoutRef.current) {
+            clearTimeout(crawlTimeoutRef.current);
+          }
+          setCrawl(false);
+          setShowStaticResponse(false);
+          const currentMsg = messages.starwars;
+          if (currentMsg && currentMsg.length >= 2) {
+            const lastResponse = currentMsg[currentMsg.length - 1].content;
+            const lastQuery = currentMsg[currentMsg.length - 2].content;
+            
+            if (lastResponse && lastQuery) {
+              const responseLength = lastResponse.length;
+              const starSize = Math.min(Math.max(responseLength / 50, 30), 60);
+              
+              const newStar = {
+                id: Date.now(),
+                query: lastQuery,
+                response: lastResponse,
+                episode: episodeNumber - 1,
+                x: Math.random() * 85 + 5,
+                y: Math.random() * 65 + 10,
+                size: starSize
+              };
+              setHistoryStars(prev => [...prev, newStar]);
+            }
+          }
+        }
 
-        
         const userMessage = input.trim();
         setInput('');
         setEnterCount(0);
         
         setUserScrolled(false);
 
-        // Star Wars special handling
         if (screen === 'starwars') {
           setCurrentQuery(userMessage);
           setShowTitle(true);
@@ -576,12 +611,13 @@
 9. 専門用語には[用語](URL)形式でリンク
 10. かわいげのある、親しみやすいトーン
 11. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-          : `あなたは「星先生」です。スター・ウォーズのオープニングクロール風に、壮大で格調高い口調で教えてください。以下のルールを厳守：
+          : `あなたは「星先生」です。優秀なAIアシスタントとして、スターウォーズのオープニングクロールのような壮大で格調高い口調で教えてください。以下のルールを厳守：
 1. **文体**: 「エピソード${toRomanNumeral(episodeNumber)}」「銀河の彼方で...」のような壮大な語り口
 2. **構成**: 
    - 冒頭でエピソード番号風の導入
-   - 本文は物語調で、知識や情報を伝える
+   - 本文は物語調で、しかし内容は現実的であり、正しい知識や正確な情報を優秀なAIとして（明言はしない）伝える
    - 時代背景や歴史的文脈を意識した表現
+   - 宇宙についてのクエリでない場合、わざわざ宇宙を意識した返答をしなくてよい
 3. **トーン**: 荘厳で格調高く、しかし理解しやすい
 4. **長さ**: 中～長文で、じっくり読ませる内容
 5. **URL禁止**: URLやリンクは一切含めない。すべて物語の中で説明する
@@ -636,10 +672,11 @@
               await new Promise(resolve => setTimeout(resolve, 10));
             }
             
-            setTimeout(() => {
+            const timeout = isMobile ? 15000 : 20000;
+            crawlTimeoutRef.current = setTimeout(() => {
               setCrawl(false);
               const responseLength = text.length;
-              const starSize = Math.min(Math.max(responseLength / 50, 15), 40);
+              const starSize = Math.min(Math.max(responseLength / 50, 30), 60);
               
               const newStar = {
                 id: Date.now(),
@@ -652,7 +689,7 @@
               };
               setHistoryStars(prev => [...prev, newStar]);
               setEpisodeNumber(prev => prev + 1);
-            }, 30000);
+            }, timeout);
             
           } else if (screen === 'fuan') {
             await typeWithHesitation(text, screen);
@@ -865,115 +902,182 @@
         setDockApps(prev => prev.filter(id => id !== appId));
       };
 
-// 設定画面
-if (screen === 'settings') {
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
-        color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <button onClick={() => setScreen('home')} style={{
-          background: 'none', border: 'none', color: 'white', fontSize: '24px',
-          cursor: 'pointer', marginRight: '12px'
-        }}>←</button>
-        <div style={{ fontSize: '18px', fontWeight: '600' }}>設定</div>
-      </div>
+      // Settings screen
+      if (screen === 'settings') {
+        return (
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
+              color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            }}>
+              <button onClick={() => setScreen('home')} style={{
+                background: 'none', border: 'none', color: 'white', fontSize: '24px',
+                cursor: 'pointer', marginRight: '12px'
+              }}>←</button>
+              <div style={{ fontSize: '18px', fontWeight: '600' }}>設定</div>
+            </div>
 
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>🗑️ データ管理</h3>
-          
-          <button
-            onClick={() => {
-              if (window.confirm('すべてのチャット履歴を削除しますか？')) {
-                setMessages({});
-                alert('チャット履歴を削除しました');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              background: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              textAlign: 'left'
-            }}
-          >
-            すべてのチャット履歴を削除
-          </button>
+            <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                marginBottom: '16px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>🗑️ データ管理</h3>
+                
+                <button
+                  onClick={() => {
+                    if (window.confirm('すべてのチャット履歴を削除しますか？')) {
+                      setMessages({});
+                      alert('チャット履歴を削除しました');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    textAlign: 'left'
+                  }}
+                >
+                  すべてのチャット履歴を削除
+                </button>
 
-          <button
-            onClick={() => {
-              if (window.confirm('星先生の履歴をすべて削除しますか？')) {
-                setHistoryStars([]);
-                setEpisodeNumber(1);
-                alert('星先生の履歴を削除しました');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              background: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              textAlign: 'left'
-            }}
-          >
-            星先生の履歴を削除
-          </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm('ぷろんぱ君の履歴を削除しますか？')) {
+                      setMessages(prev => ({ ...prev, pronpa: [] }));
+                      alert('ぷろんぱ君の履歴を削除しました');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    textAlign: 'left'
+                  }}
+                >
+                  ぷろんぱ君の履歴を削除
+                </button>
 
-          <button
-            onClick={() => {
-              if (window.confirm('キャッシュをクリアして再読み込みしますか？\n最新版が反映されます。')) {
-                localStorage.clear();
-                window.location.reload(true);
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ff4444',
-              background: '#fff5f5',
-              color: '#ff4444',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-              textAlign: 'left'
-            }}
-          >
-            ⚠️ キャッシュクリア＆再読み込み
-          </button>
-        </div>
+                <button
+                  onClick={() => {
+                    if (window.confirm('ナンクルナイさんの履歴を削除しますか？')) {
+                      setMessages(prev => ({ ...prev, nankuru: [] }));
+                      alert('ナンクルナイさんの履歴を削除しました');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    textAlign: 'left'
+                  }}
+                >
+                  ナンクルナイさんの履歴を削除
+                </button>
 
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
-          <p style={{ margin: 0, color: '#666' }}>aiPhone v2.1</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-      
+                <button
+                  onClick={() => {
+                    if (window.confirm('不安ちゃんの履歴を削除しますか？')) {
+                      setMessages(prev => ({ ...prev, fuan: [] }));
+                      alert('不安ちゃんの履歴を削除しました');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    textAlign: 'left'
+                  }}
+                >
+                  不安ちゃんの履歴を削除
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (window.confirm('星先生の履歴を削除しますか？')) {
+                      setMessages(prev => ({ ...prev, starwars: [] }));
+                      setHistoryStars([]);
+                      setEpisodeNumber(1);
+                      alert('星先生の履歴を削除しました');
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    marginBottom: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e0e0e0',
+                    background: 'white',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    textAlign: 'left'
+                  }}
+                >
+                  星先生の履歴を削除
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (window.confirm('キャッシュをクリアして再読み込みしますか？\n最新版が反映されます。')) {
+                      localStorage.clear();
+                      window.location.reload(true);
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    border: '1px solid #ff4444',
+                    background: '#fff5f5',
+                    color: '#ff4444',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    textAlign: 'left'
+                  }}
+                >
+                  ⚠️ キャッシュクリア＆再読み込み
+                </button>
+              </div>
+
+              <div style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '20px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
+                <p style={{ margin: 0, color: '#666' }}>aiPhone v2.2</p>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       // Star Wars Screen
       if (screen === 'starwars') {
         const starColors = ['white', '#ffe6e6', '#e6f0ff', '#fff4e6', '#f0e6ff'];
@@ -999,16 +1103,16 @@ if (screen === 'settings') {
                 const color = starColors[Math.floor(Math.random() * starColors.length)];
                 return (
                   <div
-      key={i}
-      className="star"
-      style={{
-        left: `${Math.random() * 100}%`,
-        top: `${Math.random() * 100}%`,
-        width: `${size}px`,
-        height: `${size}px`,
-        background: color,
-        animationDelay: `${Math.random() * 8}s`,  // 
-        animationDuration: `${6 + Math.random() * 6}s`
+                    key={i}
+                    className="star"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      background: color,
+                      animationDelay: `${Math.random() * 8}s`,
+                      animationDuration: `${6 + Math.random() * 6}s`
                     }}
                   />
                 );
@@ -1032,10 +1136,10 @@ if (screen === 'settings') {
                   setCurrentQuery(star.query);
                   setCurrentResponse(star.response);
                   setShowTitle(true);
+                  setCrawl(false);
                   setTimeout(() => {
                     setShowTitle(false);
-                    setCrawl(true);
-                    setTimeout(() => setCrawl(false), 30000);
+                    setShowStaticResponse(true);
                   }, 4000);
                 }}
                 title={`エピソード${toRomanNumeral(star.episode)}: ${star.query.substring(0, 30)}...`}
@@ -1052,7 +1156,7 @@ if (screen === 'settings') {
             {/* Crawl display */}
             {showCrawl && (
               <div className="crawl-container">
-                <div className="crawl">
+                <div className={`crawl ${isMobile ? 'mobile' : 'desktop'}`}>
                   {currentResponse.split('\n').map((line, i) => (
                     <p key={i}>{line}</p>
                   ))}
@@ -1060,9 +1164,22 @@ if (screen === 'settings') {
               </div>
             )}
 
-            {/* Home button (sphere) */}
+            {/* Static response display */}
+            {showStaticResponse && (
+              <div className="static-response">
+                {currentResponse.split('\n').map((line, i) => (
+                  <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Home button */}
             <button
-              onClick={() => setScreen('home')}
+              onClick={() => {
+                setScreen('home');
+                setShowStaticResponse(false);
+                setCrawl(false);
+              }}
               className="sphere-button"
               style={{
                 position: 'fixed',
@@ -1074,10 +1191,13 @@ if (screen === 'settings') {
               }}
               title="ホーム"
             >
-              🏠
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
             </button>
 
-            {/* Clear button (sphere) */}
+            {/* Clear button */}
             <button
               onClick={clearChat}
               className="sphere-button"
@@ -1091,7 +1211,12 @@ if (screen === 'settings') {
               }}
               title="履歴削除"
             >
-              🗑️
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
             </button>
 
             {/* Input area */}
@@ -1113,7 +1238,7 @@ if (screen === 'settings') {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={isMobile ? "メッセージを入力..." : "メッセージ入力 (2回Enterで送信、Shift+Enterで改行)"}
-                disabled={showTitle || isThinking.starwars} 
+                disabled={showTitle || isThinking.starwars}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -1131,8 +1256,8 @@ if (screen === 'settings') {
                 rows={1}
               />
               <button
-  onClick={handleSend}
-  disabled={!input.trim() || showTitle || isThinking.starwars}  
+                onClick={handleSend}
+                disabled={!input.trim() || showTitle || isThinking.starwars}
                 style={{
                   width: '50px',
                   height: '50px',
@@ -1394,7 +1519,7 @@ if (screen === 'settings') {
             >
               {dockApps.length === 0 ? (
                 <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px' }}>
-                  {moveMode ? 'ここをタップでDockに追加' : draggedApp ? '👆 ここにドロップ' : 'アイコンをここにドラッグ'}
+                  {moveMode ? 'ここをタップでDockに追加' : draggedApp ? '👆 ここにドロップ' : 'アイコン長押しで移動'}
                 </div>
               ) : (
                 dockApps.map(appId => {
@@ -1722,5 +1847,3 @@ if (screen === 'settings') {
   </script>
 </body>
 </html>
-
-
