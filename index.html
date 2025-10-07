@@ -46,23 +46,32 @@
     .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
 
     /* Star Wars styles */
-    @keyframes twinkle {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
+    @keyframes gentlePulse {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 0.9;
+      }
+      50% { 
+        transform: scale(1.3);
+        opacity: 1;
+      }
     }
     @keyframes titleAppear {
       0% {
         opacity: 0;
-        transform: scale(3);
+        transform: scale(5) translateZ(200px);
       }
-      50% {
+      30% {
         opacity: 1;
-        transform: scale(1);
       }
       100% {
         opacity: 0;
         transform: scale(0.1) translateY(-200%);
       }
+    }
+    @keyframes screenDarken {
+      0%, 100% { opacity: 1; }
+      15%, 85% { opacity: 0.3; }
     }
     @keyframes crawl {
       0% {
@@ -76,7 +85,7 @@
       position: absolute;
       background: white;
       border-radius: 50%;
-      animation: twinkle 3s infinite;
+      animation: gentlePulse 4s ease-in-out infinite;
     }
     .crawl-container {
       position: absolute;
@@ -111,28 +120,49 @@
       left: 50%;
       transform: translate(-50%, -50%);
       color: #feda4a;
-      font-size: 36px;
+      font-size: 48px;
       font-weight: bold;
       text-align: center;
-      animation: titleAppear 3s ease-out forwards;
+      animation: titleAppear 4s ease-out forwards;
       z-index: 10;
-      text-shadow: 0 0 20px rgba(254, 218, 74, 0.8);
+      text-shadow: 0 0 30px rgba(254, 218, 74, 0.9);
       pointer-events: none;
+      perspective: 1000px;
+    }
+    .screen-darken {
+      animation: screenDarken 4s ease-out forwards;
     }
     .history-star {
       position: absolute;
-      width: 3px;
-      height: 3px;
-      background: white;
       border-radius: 50%;
       cursor: pointer;
       transition: all 0.3s;
+      background: radial-gradient(circle at 30% 30%, #ffffff, #feda4a 50%, #ff8800);
+      box-shadow: 0 0 20px rgba(254, 218, 74, 0.6), inset -5px -5px 10px rgba(0,0,0,0.3), inset 5px 5px 10px rgba(255,255,255,0.5);
     }
     .history-star:hover {
-      width: 6px;
-      height: 6px;
-      background: #feda4a;
-      box-shadow: 0 0 10px #feda4a;
+      transform: scale(1.3);
+      box-shadow: 0 0 30px rgba(254, 218, 74, 1), inset -5px -5px 10px rgba(0,0,0,0.3), inset 5px 5px 10px rgba(255,255,255,0.5);
+    }
+    .sphere-button {
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: radial-gradient(circle at 30% 30%, #6a7a8a, #3a4a5a 50%, #1a2a3a);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset -3px -3px 8px rgba(0,0,0,0.4), inset 3px 3px 8px rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .sphere-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6), inset -3px -3px 8px rgba(0,0,0,0.4), inset 3px 3px 8px rgba(255,255,255,0.2);
+    }
+    .sphere-button:active {
+      transform: scale(0.95);
     }
   </style>
 </head>
@@ -175,6 +205,7 @@
       const [historyStars, setHistoryStars] = useState([]);
       const [selectedHistory, setSelectedHistory] = useState(null);
       const [enterCount, setEnterCount] = useState(0);
+      const [episodeNumber, setEpisodeNumber] = useState(1);
       
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
@@ -271,12 +302,13 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '2.0';
+        const APP_VERSION = '2.1';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
         const savedDockApps = localStorage.getItem('aiphone_dockApps');
         const savedHistoryStars = localStorage.getItem('aiphone_historyStars');
+        const savedEpisodeNumber = localStorage.getItem('aiphone_episodeNumber');
         
         if (savedVersion && savedVersion !== APP_VERSION) {
           console.log(`Version update: ${savedVersion} -> ${APP_VERSION}`);
@@ -303,6 +335,9 @@
         if (savedHistoryStars) {
           setHistoryStars(JSON.parse(savedHistoryStars));
         }
+        if (savedEpisodeNumber) {
+          setEpisodeNumber(parseInt(savedEpisodeNumber));
+        }
       }, []);
 
       useEffect(() => {
@@ -320,6 +355,10 @@
       useEffect(() => {
         localStorage.setItem('aiphone_historyStars', JSON.stringify(historyStars));
       }, [historyStars]);
+
+      useEffect(() => {
+        localStorage.setItem('aiphone_episodeNumber', episodeNumber.toString());
+      }, [episodeNumber]);
 
       const scrollToBottom = () => {
         if (!userScrolled && !isUserInteracting && messagesEndRef.current) {
@@ -456,7 +495,7 @@
           
           setTimeout(() => {
             setShowTitle(false);
-          }, 3000);
+          }, 4000);
 
           setMessages(prev => ({
             ...prev,
@@ -509,18 +548,19 @@
 10. かわいげのある、親しみやすいトーン
 11. 現在日時: ${new Date().toLocaleString('ja-JP')}`
           : `あなたは「星先生」です。スター・ウォーズのオープニングクロール風に、壮大で格調高い口調で教えてください。以下のルールを厳守：
-1. **文体**: 「エピソードⅠ」「銀河の彼方で...」のような壮大な語り口
+1. **文体**: 「エピソード${toRomanNumeral(episodeNumber)}」「銀河の彼方で...」のような壮大な語り口
 2. **構成**: 
    - 冒頭でエピソード番号風の導入
    - 本文は物語調で、知識や情報を伝える
    - 時代背景や歴史的文脈を意識した表現
 3. **トーン**: 荘厳で格調高く、しかし理解しやすい
 4. **長さ**: 中～長文で、じっくり読ませる内容
-5. **専門用語**: [用語](URL)形式で必ずリンクを付ける
+5. **URL禁止**: URLやリンクは一切含めない。すべて物語の中で説明する
 6. **強調**: **太字**で重要部分を強調
-7. **URL提供**: 参考となる情報源のURLを必ず含める
-8. どんな質問でも、このスター・ウォーズ風のスタイルで返答する
-9. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
+7. どんな質問でも、このスター・ウォーズ風のスタイルで返答する
+8. スターウォーズ風のスタイルは保ちながら、具体的な登場人物などの名称は出さない（ユーザーのクエリがスターウォーズに関するものだった場合以外）
+9. 具体的なスターウォーズの登場人物名などは出さないが、「フォース」など、一般名詞的に使えるものは使ってよい。
+10. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
         setMessages(prev => ({
           ...prev,
@@ -569,14 +609,20 @@
             
             setTimeout(() => {
               setCrawl(false);
+              const responseLength = text.length;
+              const starSize = Math.min(Math.max(responseLength / 50, 15), 40);
+              
               const newStar = {
                 id: Date.now(),
                 query: userMessage,
                 response: text,
-                x: Math.random() * 90 + 5,
-                y: Math.random() * 70 + 10
+                episode: episodeNumber,
+                x: Math.random() * 85 + 5,
+                y: Math.random() * 65 + 10,
+                size: starSize
               };
               setHistoryStars(prev => [...prev, newStar]);
+              setEpisodeNumber(prev => prev + 1);
             }, 30000);
             
           } else if (screen === 'fuan') {
@@ -616,6 +662,14 @@
         }
       };
 
+      const toRomanNumeral = (num) => {
+        const romanNumerals = [
+          '', 'Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ',
+          'Ⅺ', 'Ⅻ', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'
+        ];
+        return romanNumerals[num] || num.toString();
+      };
+
       const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
@@ -636,6 +690,7 @@
           setMessages(prev => ({ ...prev, [screen]: [] }));
           if (screen === 'starwars') {
             setHistoryStars([]);
+            setEpisodeNumber(1);
           }
         }
       };
@@ -783,14 +838,16 @@
 
       // Star Wars Screen
       if (screen === 'starwars') {
+        const starColors = ['white', '#ffe6e6', '#e6f0ff', '#fff4e6', '#f0e6ff'];
+        
         return (
           <div style={{
             minHeight: '100vh',
             background: '#000',
             position: 'relative',
             overflow: 'hidden'
-          }}>
-            {/* Star field */}
+          }} className={showTitle ? 'screen-darken' : ''}>
+            {/* Background star field */}
             <div style={{
               position: 'absolute',
               top: 0,
@@ -799,19 +856,25 @@
               height: '100%',
               zIndex: 1
             }}>
-              {Array.from({ length: 200 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="star"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                    width: `${Math.random() * 2 + 0.5}px`,
-                    height: `${Math.random() * 2 + 0.5}px`,
-                    animationDelay: `${Math.random() * 3}s`
-                  }}
-                />
-              ))}
+              {Array.from({ length: 200 }).map((_, i) => {
+                const size = Math.random() * 2 + 0.5;
+                const color = starColors[Math.floor(Math.random() * starColors.length)];
+                return (
+                  <div
+                    key={i}
+                    className="star"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      background: color,
+                      animationDelay: `${Math.random() * 4}s`,
+                      animationDuration: `${3 + Math.random() * 3}s`
+                    }}
+                  />
+                );
+              })}
             </div>
 
             {/* History stars */}
@@ -822,6 +885,8 @@
                 style={{
                   left: `${star.x}%`,
                   top: `${star.y}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
                   zIndex: 5
                 }}
                 onClick={() => {
@@ -833,8 +898,9 @@
                     setShowTitle(false);
                     setCrawl(true);
                     setTimeout(() => setCrawl(false), 30000);
-                  }, 3000);
+                  }, 4000);
                 }}
+                title={`エピソード${toRomanNumeral(star.episode)}: ${star.query.substring(0, 30)}...`}
               />
             ))}
 
@@ -856,46 +922,38 @@
               </div>
             )}
 
-            {/* Back button */}
+            {/* Home button (sphere) */}
             <button
               onClick={() => setScreen('home')}
+              className="sphere-button"
               style={{
                 position: 'fixed',
                 top: '20px',
                 left: '20px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                color: 'white',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '16px',
-                zIndex: 100,
-                backdropFilter: 'blur(10px)'
+                width: '50px',
+                height: '50px',
+                zIndex: 100
               }}
+              title="ホーム"
             >
-              ← ホーム
+              🏠
             </button>
 
-            {/* Clear button */}
+            {/* Clear button (sphere) */}
             <button
               onClick={clearChat}
+              className="sphere-button"
               style={{
                 position: 'fixed',
                 top: '20px',
                 right: '20px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                color: 'white',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                zIndex: 100,
-                backdropFilter: 'blur(10px)'
+                width: '50px',
+                height: '50px',
+                zIndex: 100
               }}
+              title="履歴削除"
             >
-              🗑️ クリア
+              🗑️
             </button>
 
             {/* Input area */}
