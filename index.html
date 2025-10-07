@@ -67,19 +67,20 @@
         opacity: 1;
       }
     }
-    @keyframes titleAppear {
-      0% {
-        opacity: 0;
-        transform: scale(5) translateZ(200px);
-      }
-      30% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0;
-        transform: scale(0.1) translateY(-200%);
-      }
-    }
+   @keyframes titleAppear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(5);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150vh) scale(0.1);
+  }
+}
     @keyframes crawlMobile {
       0% {
         transform: rotateX(25deg) translateY(100%);
@@ -135,12 +136,11 @@
       animation: crawlDesktop 30s linear forwards;
     }
     .title-display {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: #feda4a;
-      font-size: 48px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #feda4a;
+  font-size: 48px;
       font-weight: bold;
       text-align: center;
       animation: titleAppear 4s ease-out forwards;
@@ -1132,16 +1132,13 @@
                   zIndex: 5
                 }}
                 onClick={() => {
-                  setSelectedHistory(star);
-                  setCurrentQuery(star.query);
-                  setCurrentResponse(star.response);
-                  setShowTitle(true);
-                  setCrawl(false);
-                  setTimeout(() => {
-                    setShowTitle(false);
-                    setShowStaticResponse(true);
-                  }, 4000);
-                }}
+  setSelectedHistory(star);
+  setCurrentQuery(star.query);
+  setCurrentResponse(star.response);
+  setShowTitle(false);
+  setCrawl(false);
+  setShowStaticResponse(true);
+}}
                 title={`エピソード${toRomanNumeral(star.episode)}: ${star.query.substring(0, 30)}...`}
               />
             ))}
@@ -1165,13 +1162,24 @@
             )}
 
             {/* Static response display */}
-            {showStaticResponse && (
-              <div className="static-response">
-                {currentResponse.split('\n').map((line, i) => (
-                  <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
-                ))}
-              </div>
-            )}
+           {showStaticResponse && (
+  <div className="static-response">
+    <div style={{ 
+      fontSize: '28px', 
+      marginBottom: '24px', 
+      color: '#feda4a',
+      fontWeight: 'bold',
+      textAlign: 'center',
+      borderBottom: '2px solid #feda4a',
+      paddingBottom: '16px'
+    }}>
+      {currentQuery}
+    </div>
+    {currentResponse.split('\n').map((line, i) => (
+      <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
+    ))}
+  </div>
+)}
 
             {/* Home button */}
             <button
@@ -1847,3 +1855,4 @@
   </script>
 </body>
 </html>
+
