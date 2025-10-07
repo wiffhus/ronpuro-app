@@ -216,114 +216,7 @@
           setCurrentTime(new Date());
         }, 1000);
 
-// 設定画面
-if (screen === 'settings') {
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
-        color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <button onClick={() => setScreen('home')} style={{
-          background: 'none', border: 'none', color: 'white', fontSize: '24px',
-          cursor: 'pointer', marginRight: '12px'
-        }}>←</button>
-        <div style={{ fontSize: '18px', fontWeight: '600' }}>設定</div>
-      </div>
 
-      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>🗑️ データ管理</h3>
-          
-          <button
-            onClick={() => {
-              if (window.confirm('すべてのチャット履歴を削除しますか？')) {
-                setMessages({});
-                alert('チャット履歴を削除しました');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              background: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              textAlign: 'left'
-            }}
-          >
-            すべてのチャット履歴を削除
-          </button>
-
-          <button
-            onClick={() => {
-              if (window.confirm('星先生の履歴をすべて削除しますか？')) {
-                setHistoryStars([]);
-                setEpisodeNumber(1);
-                alert('星先生の履歴を削除しました');
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginBottom: '12px',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0',
-              background: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              textAlign: 'left'
-            }}
-          >
-            星先生の履歴を削除
-          </button>
-
-          <button
-            onClick={() => {
-              if (window.confirm('キャッシュをクリアして再読み込みしますか？\n最新版が反映されます。')) {
-                localStorage.clear();
-                window.location.reload(true);
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #ff4444',
-              background: '#fff5f5',
-              color: '#ff4444',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: '600',
-              textAlign: 'left'
-            }}
-          >
-            ⚠️ キャッシュクリア＆再読み込み
-          </button>
-        </div>
-
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
-          <p style={{ margin: 0, color: '#666' }}>aiPhone v2.1</p>
-        </div>
-      </div>
-    </div>
-  );
-}
         
         return () => clearInterval(timer);
       }, []);
@@ -972,6 +865,115 @@ if (screen === 'settings') {
         setDockApps(prev => prev.filter(id => id !== appId));
       };
 
+// 設定画面
+if (screen === 'settings') {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
+        color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <button onClick={() => setScreen('home')} style={{
+          background: 'none', border: 'none', color: 'white', fontSize: '24px',
+          cursor: 'pointer', marginRight: '12px'
+        }}>←</button>
+        <div style={{ fontSize: '18px', fontWeight: '600' }}>設定</div>
+      </div>
+
+      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>🗑️ データ管理</h3>
+          
+          <button
+            onClick={() => {
+              if (window.confirm('すべてのチャット履歴を削除しますか？')) {
+                setMessages({});
+                alert('チャット履歴を削除しました');
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginBottom: '12px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              background: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              textAlign: 'left'
+            }}
+          >
+            すべてのチャット履歴を削除
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('星先生の履歴をすべて削除しますか？')) {
+                setHistoryStars([]);
+                setEpisodeNumber(1);
+                alert('星先生の履歴を削除しました');
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginBottom: '12px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              background: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              textAlign: 'left'
+            }}
+          >
+            星先生の履歴を削除
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('キャッシュをクリアして再読み込みしますか？\n最新版が反映されます。')) {
+                localStorage.clear();
+                window.location.reload(true);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ff4444',
+              background: '#fff5f5',
+              color: '#ff4444',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+              textAlign: 'left'
+            }}
+          >
+            ⚠️ キャッシュクリア＆再読み込み
+          </button>
+        </div>
+
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
+          <p style={{ margin: 0, color: '#666' }}>aiPhone v2.1</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+      
       // Star Wars Screen
       if (screen === 'starwars') {
         const starColors = ['white', '#ffe6e6', '#e6f0ff', '#fff4e6', '#f0e6ff'];
@@ -982,7 +984,7 @@ if (screen === 'settings') {
             background: '#000',
             position: 'relative',
             overflow: 'hidden'
-          }}''}>
+          }}>
             {/* Background star field */}
             <div style={{
               position: 'absolute',
@@ -1720,4 +1722,5 @@ if (screen === 'settings') {
   </script>
 </body>
 </html>
+
 
