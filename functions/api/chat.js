@@ -7,16 +7,19 @@ export async function onRequest(context) {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   };
-  // OPTIONSリクエスト（プリフライト）への対応
+
+  // OPTIONSリクエスト(プリフライト)への対応
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
   if (request.method !== 'POST') {
     return new Response('Method not allowed', { 
       status: 405,
       headers: corsHeaders
     });
   }
+
   try {
     const { message, systemPrompt, history, persona } = await request.json();
     
@@ -32,8 +35,11 @@ export async function onRequest(context) {
       case 'fuan':
         API_KEY = env.GEMINI_API_KEY_FUAN;
         break;
+      case 'starwars':
+        API_KEY = env.GEMINI_API_KEY_STARWARS;
+        break;
       default:
-        API_KEY = env.GOOGLE_API_KEY; // 念のためフォールバック
+        API_KEY = env.GOOGLE_API_KEY; // フォールバック
     }
     
     if (!API_KEY) {
@@ -42,11 +48,13 @@ export async function onRequest(context) {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
     // 会話履歴をGemini形式に変換
     const contents = [
       { role: 'user', parts: [{ text: systemPrompt }] },
       { role: 'model', parts: [{ text: '承知しました。ルールに従って応答します。' }] }
     ];
+
     // historyが存在する場合、履歴を追加
     if (history && history.length > 0) {
       history.forEach(msg => {
@@ -56,8 +64,11 @@ export async function onRequest(context) {
         });
       });
     }
+
     // 最新のメッセージを追加
     contents.push({ role: 'user', parts: [{ text: message }] });
+
+    // Gemini APIを呼び出し
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`,
       {
@@ -72,17 +83,21 @@ export async function onRequest(context) {
         })
       }
     );
+
     if (!response.ok) {
       throw new Error(`Gemini API error: ${response.status}`);
     }
+
     const data = await response.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'エラーが発生しました';
+
     return new Response(JSON.stringify({ text }), {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
       }
     });
+
   } catch (error) {
     console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
