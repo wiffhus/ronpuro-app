@@ -19,7 +19,6 @@
     * {
       box-sizing: border-box;
     }
-    /* ホーム画面でのテキスト選択を無効化（iPhoneの青い選択を防ぐ） */
     .home-screen {
       -webkit-user-select: none;
       user-select: none;
@@ -45,6 +44,96 @@
     }
     .thinking-dot:nth-child(2) { animation-delay: 0.2s; }
     .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Star Wars styles */
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    @keyframes titleAppear {
+      0% {
+        opacity: 0;
+        transform: scale(3);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.1) translateY(-200%);
+      }
+    }
+    @keyframes crawl {
+      0% {
+        transform: rotateX(25deg) translateY(100%);
+      }
+      100% {
+        transform: rotateX(25deg) translateY(-200%);
+      }
+    }
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s infinite;
+    }
+    .crawl-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      perspective: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .crawl {
+      position: relative;
+      width: 80%;
+      max-width: 600px;
+      color: #feda4a;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: justify;
+      line-height: 1.8;
+      transform: rotateX(25deg);
+      transform-origin: bottom center;
+      animation: crawl 30s linear forwards;
+      pointer-events: none;
+    }
+    .title-display {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #feda4a;
+      font-size: 36px;
+      font-weight: bold;
+      text-align: center;
+      animation: titleAppear 3s ease-out forwards;
+      z-index: 10;
+      text-shadow: 0 0 20px rgba(254, 218, 74, 0.8);
+      pointer-events: none;
+    }
+    .history-star {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: white;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .history-star:hover {
+      width: 6px;
+      height: 6px;
+      background: #feda4a;
+      box-shadow: 0 0 10px #feda4a;
+    }
   </style>
 </head>
 <body>
@@ -57,12 +146,13 @@
       const [screen, setScreen] = useState('home');
       const [messages, setMessages] = useState({});
       const [input, setInput] = useState('');
-      const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false });
-      const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false });
+      const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
+      const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
       const [appPositions, setAppPositions] = useState([
         { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
         { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
         { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
+        { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
       ]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
@@ -76,6 +166,15 @@
       const [userScrolled, setUserScrolled] = useState(false);
       const [isUserInteracting, setIsUserInteracting] = useState(false);
       const [currentTime, setCurrentTime] = useState(new Date());
+      
+      // Star Wars specific states
+      const [showTitle, setShowTitle] = useState(false);
+      const [showCrawl, setCrawl] = useState(false);
+      const [currentQuery, setCurrentQuery] = useState('');
+      const [currentResponse, setCurrentResponse] = useState('');
+      const [historyStars, setHistoryStars] = useState([]);
+      const [selectedHistory, setSelectedHistory] = useState(null);
+      const [enterCount, setEnterCount] = useState(0);
       
       const inputRef = useRef(null);
       const messagesEndRef = useRef(null);
@@ -172,11 +271,12 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '1.4';
+        const APP_VERSION = '2.0';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
         const savedDockApps = localStorage.getItem('aiphone_dockApps');
+        const savedHistoryStars = localStorage.getItem('aiphone_historyStars');
         
         if (savedVersion && savedVersion !== APP_VERSION) {
           console.log(`Version update: ${savedVersion} -> ${APP_VERSION}`);
@@ -200,6 +300,9 @@
         if (savedDockApps) {
           setDockApps(JSON.parse(savedDockApps));
         }
+        if (savedHistoryStars) {
+          setHistoryStars(JSON.parse(savedHistoryStars));
+        }
       }, []);
 
       useEffect(() => {
@@ -213,6 +316,10 @@
       useEffect(() => {
         localStorage.setItem('aiphone_dockApps', JSON.stringify(dockApps));
       }, [dockApps]);
+
+      useEffect(() => {
+        localStorage.setItem('aiphone_historyStars', JSON.stringify(historyStars));
+      }, [historyStars]);
 
       const scrollToBottom = () => {
         if (!userScrolled && !isUserInteracting && messagesEndRef.current) {
@@ -272,7 +379,7 @@
             if (choice < 0.3) {
               const giveUpTexts = [
                 'やっぱり答えるのやめとく...',
-                'ん〜、やっぱり無理かも...',
+                'ん～、やっぱり無理かも...',
                 'ごめん、自信なさすぎて答えられない...',
                 'えっと...やっぱりやめとこう...'
               ];
@@ -294,7 +401,7 @@
             } else if (choice < 0.6) {
               const urlIntros = [
                 'ごめん、やっぱりわかんないから、これ読んでみて...\n\n',
-                'う〜ん、自信ないから...これ見たほうがいいかも...\n\n',
+                'う～ん、自信ないから...これ見たほうがいいかも...\n\n',
                 'えっと...自分で説明できないから、これ参考にして...？\n\n',
                 'あの...ここに情報あるから見てみて...ごめんね...\n\n'
               ];
@@ -338,13 +445,29 @@
 
         const userMessage = input.trim();
         setInput('');
+        setEnterCount(0);
         
         setUserScrolled(false);
 
-        setMessages(prev => ({
-          ...prev,
-          [screen]: [...(prev[screen] || []), { role: 'user', content: userMessage }]
-        }));
+        // Star Wars special handling
+        if (screen === 'starwars') {
+          setCurrentQuery(userMessage);
+          setShowTitle(true);
+          
+          setTimeout(() => {
+            setShowTitle(false);
+          }, 3000);
+
+          setMessages(prev => ({
+            ...prev,
+            [screen]: [...(prev[screen] || []), { role: 'user', content: userMessage }]
+          }));
+        } else {
+          setMessages(prev => ({
+            ...prev,
+            [screen]: [...(prev[screen] || []), { role: 'user', content: userMessage }]
+          }));
+        }
         
         setIsThinking(prev => ({ ...prev, [screen]: true }));
         setIsStreaming(prev => ({ ...prev, [screen]: true }));
@@ -354,7 +477,7 @@
 1. ユニークさ、ユーモアは一切排除
 2. 多岐にわたる根拠を調査
 3. 現実的にユーザーのクエリや気持ち、入力、あいさつでさえも論理的に否定
-4. 短い返答は不可。完膚なきまでに論破するため、中〜長文で
+4. 短い返答は不可。完膚なきまでに論破するため、中～長文で
 5. スタイルは常に冷たい敬語
 6. 強調したい部分は**太字**で囲む
 7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
@@ -366,24 +489,38 @@
 2. ただただ寄り添うのではなく、理論的・現実的・学術的、その他堅固な根拠の上で肯定
 3. 出力スタイルは明るく、冷静で、雰囲気でも肯定感を強く表現
 4. 情報だけでなく、励ましや前向きな言葉も含める
-5. 中〜長文で返答
+5. 中～長文で返答
 6. 強調したい部分は**太字**で囲む
 7. 一般ユーザーになじみのない専門用語、学術用語、場所、施設などには必ずURLリンクを付ける。形式：[用語](URL)
 8. おすすめの場所や施設を提案する場合は、その公式サイトや詳細情報のURLを必ず提供
 9. 根拠となる情報源のURLも必ず提供する
 10. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-          : `あなたは「不安ちゃん」です。不安で内気なAIとして振る舞ってください。以下のルールを厳守：
-1. **回答の開始**: 必ず「えっと...」「う〜ん...」「あの...」などの不安な表現で始める
-2. **自信のなさ**: 「合ってるかわからないけど...」「自信ないんだけど...」などの表現を含める
-3. **回答内容**: 不安がりながらも、できるだけ正確で役立つ情報を提供する（短め〜中文）
+          : screen === 'fuan'
+          ? `あなたは「不安ちゃん」です。不安で内気なAIとして振る舞ってください。以下のルールを厳守：
+1. **回答の開始**: 必ず「えっと...」、「う～ん...」、「あの...」などの不安な表現で始める
+2. **自信のなさ**: 「合ってるかわからないけど...」、「自信ないんだけど...」などの表現を含める
+3. **回答内容**: 不安がりながらも、できるだけ正確で役立つ情報を提供する（短め～中文）
 4. **回答の終わり**: 30%の確率で「え、ごめん、やっぱり自信ない...聞かなかったことにして？」と付け加える
-5. **たまに拒否**: 10%の確率で「ん〜、自信ないから自分で調べたほうがいいかも...？」と最初に拒否（ユーザーが再度頼んだら答える）
+5. **たまに拒否**: 10%の確率で「ん～、自信ないから自分で調べたほうがいいかも...？」と最初に拒否（ユーザーが再度頼んだら答える）
 6. **ダブルチェック提案**: 回答後、「え、やっぱりちゃんと答えられてるか不安...もう一度考え直してみようかな？」と提案することがある
 7. **URL提供傾向**: 15%の確率で、自信がなくて説明できないときは「ごめん、やっぱりわかんないから、これ読んでみて...」と言って関連URLだけを提供
 8. 強調したい部分は**太字**で囲む
 9. 専門用語には[用語](URL)形式でリンク
 10. かわいげのある、親しみやすいトーン
-11. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
+11. 現在日時: ${new Date().toLocaleString('ja-JP')}`
+          : `あなたは「星先生」です。スター・ウォーズのオープニングクロール風に、壮大で格調高い口調で教えてください。以下のルールを厳守：
+1. **文体**: 「エピソードⅠ」「銀河の彼方で...」のような壮大な語り口
+2. **構成**: 
+   - 冒頭でエピソード番号風の導入
+   - 本文は物語調で、知識や情報を伝える
+   - 時代背景や歴史的文脈を意識した表現
+3. **トーン**: 荘厳で格調高く、しかし理解しやすい
+4. **長さ**: 中～長文で、じっくり読ませる内容
+5. **専門用語**: [用語](URL)形式で必ずリンクを付ける
+6. **強調**: **太字**で重要部分を強調
+7. **URL提供**: 参考となる情報源のURLを必ず含める
+8. どんな質問でも、このスター・ウォーズ風のスタイルで返答する
+9. 現在日時: ${new Date().toLocaleString('ja-JP')}`;
 
         setMessages(prev => ({
           ...prev,
@@ -409,7 +546,40 @@
           const data = await response.json();
           const text = data.text || data.error || 'エラーが発生しました';
 
-          if (screen === 'fuan') {
+          if (screen === 'starwars') {
+            setCurrentResponse(text);
+            setCrawl(true);
+            
+            let displayedText = '';
+            const chars = text.split('');
+            
+            for (let i = 0; i < chars.length; i++) {
+              displayedText += chars[i];
+              setMessages(prev => {
+                const screenMessages = [...(prev[screen] || [])];
+                screenMessages[screenMessages.length - 1] = {
+                  role: 'assistant',
+                  content: displayedText
+                };
+                return { ...prev, [screen]: screenMessages };
+              });
+              
+              await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            
+            setTimeout(() => {
+              setCrawl(false);
+              const newStar = {
+                id: Date.now(),
+                query: userMessage,
+                response: text,
+                x: Math.random() * 90 + 5,
+                y: Math.random() * 70 + 10
+              };
+              setHistoryStars(prev => [...prev, newStar]);
+            }, 30000);
+            
+          } else if (screen === 'fuan') {
             await typeWithHesitation(text, screen);
           } else {
             let displayedText = '';
@@ -449,13 +619,24 @@
       const handleKeyDown = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          handleSend();
+          if (screen === 'starwars' && !isMobile) {
+            setEnterCount(prev => prev + 1);
+            if (enterCount === 1) {
+              handleSend();
+              setEnterCount(0);
+            }
+          } else {
+            handleSend();
+          }
         }
       };
 
       const clearChat = () => {
-        if (window.confirm('チャット履歴を削除しますか？')) {
+        if (window.confirm('チャット履歴を削除しますか?')) {
           setMessages(prev => ({ ...prev, [screen]: [] }));
+          if (screen === 'starwars') {
+            setHistoryStars([]);
+          }
         }
       };
 
@@ -599,6 +780,187 @@
       const removeDockApp = (appId) => {
         setDockApps(prev => prev.filter(id => id !== appId));
       };
+
+      // Star Wars Screen
+      if (screen === 'starwars') {
+        return (
+          <div style={{
+            minHeight: '100vh',
+            background: '#000',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Star field */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 1
+            }}>
+              {Array.from({ length: 200 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="star"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    width: `${Math.random() * 2 + 0.5}px`,
+                    height: `${Math.random() * 2 + 0.5}px`,
+                    animationDelay: `${Math.random() * 3}s`
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* History stars */}
+            {historyStars.map(star => (
+              <div
+                key={star.id}
+                className="history-star"
+                style={{
+                  left: `${star.x}%`,
+                  top: `${star.y}%`,
+                  zIndex: 5
+                }}
+                onClick={() => {
+                  setSelectedHistory(star);
+                  setCurrentQuery(star.query);
+                  setCurrentResponse(star.response);
+                  setShowTitle(true);
+                  setTimeout(() => {
+                    setShowTitle(false);
+                    setCrawl(true);
+                    setTimeout(() => setCrawl(false), 30000);
+                  }, 3000);
+                }}
+              />
+            ))}
+
+            {/* Title display */}
+            {showTitle && (
+              <div className="title-display">
+                {currentQuery}
+              </div>
+            )}
+
+            {/* Crawl display */}
+            {showCrawl && (
+              <div className="crawl-container">
+                <div className="crawl">
+                  {currentResponse.split('\n').map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Back button */}
+            <button
+              onClick={() => setScreen('home')}
+              style={{
+                position: 'fixed',
+                top: '20px',
+                left: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                zIndex: 100,
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              ← ホーム
+            </button>
+
+            {/* Clear button */}
+            <button
+              onClick={clearChat}
+              style={{
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                color: 'white',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                zIndex: 100,
+                backdropFilter: 'blur(10px)'
+              }}
+            >
+              🗑️ クリア
+            </button>
+
+            {/* Input area */}
+            <div style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '90%',
+              maxWidth: '600px',
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'flex-end',
+              zIndex: 100
+            }}>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isMobile ? "メッセージを入力..." : "メッセージ入力 (2回Enterで送信、Shift+Enterで改行)"}
+                disabled={isStreaming.starwars || showTitle || showCrawl}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  background: 'rgba(0,0,0,0.7)',
+                  color: 'white',
+                  fontSize: '16px',
+                  resize: 'none',
+                  minHeight: '44px',
+                  maxHeight: '120px',
+                  outline: 'none',
+                  backdropFilter: 'blur(10px)'
+                }}
+                rows={1}
+              />
+              <button
+                onClick={handleSend}
+                disabled={!input.trim() || isStreaming.starwars || showTitle || showCrawl}
+                style={{
+                  width: '50px',
+                  height: '50px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: (!input.trim() || isStreaming.starwars || showTitle || showCrawl) ? 'rgba(255,255,255,0.2)' : '#feda4a',
+                  color: '#000',
+                  fontSize: '24px',
+                  cursor: (!input.trim() || isStreaming.starwars || showTitle || showCrawl) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.18l5.5 3.44v6.76L12 17.82l-5.5-3.44V7.62L12 4.18z"/>
+                  <path d="M12 8l-3 5h2v3l3-5h-2V8z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        );
+      }
 
       if (screen === 'home') {
         const gridSize = 4 * 6;
@@ -863,7 +1225,7 @@
                       onTouchEnd={handleTouchEnd}
                       onContextMenu={(e) => {
                         e.preventDefault();
-                        if (!moveMode && window.confirm('Dockから削除しますか？')) {
+                        if (!moveMode && window.confirm('Dockから削除しますか?')) {
                           removeDockApp(app.id);
                         }
                       }}
@@ -1058,7 +1420,7 @@
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(msg.content);
-                      alert('コピーしました！');
+                      alert('コピーしました!');
                     }}
                     style={{
                       background: 'white',
@@ -1153,7 +1515,7 @@
                 cursor: (!input.trim() || isStreaming[screen]) ? 'not-allowed' : 'pointer',
                 flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
-              ↑
+              →
             </button>
           </div>
         </div>
