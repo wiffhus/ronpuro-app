@@ -49,10 +49,10 @@
     @keyframes gentlePulse {
       0%, 100% { 
         transform: scale(1);
-        opacity: 0.9;
+        opacity: 0.7;
       }
       50% { 
-        transform: scale(1.3);
+        transform: scale(1.5);
         opacity: 1;
       }
     }
@@ -69,10 +69,7 @@
         transform: scale(0.1) translateY(-200%);
       }
     }
-    @keyframes screenDarken {
-      0%, 100% { opacity: 1; }
-      15%, 85% { opacity: 0.3; }
-    }
+
     @keyframes crawl {
       0% {
         transform: rotateX(25deg) translateY(100%);
@@ -178,12 +175,13 @@
       const [input, setInput] = useState('');
       const [isStreaming, setIsStreaming] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
       const [isThinking, setIsThinking] = useState({ pronpa: false, nankuru: false, fuan: false, starwars: false });
-      const [appPositions, setAppPositions] = useState([
-        { id: 'pronpa', name: 'ぷろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
-        { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
-        { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
-        { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
-      ]);
+     const [appPositions, setAppPositions] = useState([
+  { id: 'pronpa', name: 'しろんぱ君', icon: '⚔️', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', description: '完膚なきまでに論破します', position: 0 },
+  { id: 'nankuru', name: 'ナンクルナイさん', icon: '🌸', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', description: '論理的に完全肯定します', position: 1 },
+  { id: 'fuan', name: '不安ちゃん', icon: '😰', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)', description: '不安だけど頑張って答えます', position: 2 },
+  { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
+  { id: 'settings', name: '設定', icon: '⚙️', color: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)', description: 'アプリの設定', position: 4 },  // 追加
+]);
       const [dockApps, setDockApps] = useState([]);
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
@@ -217,6 +215,116 @@
         const timer = setInterval(() => {
           setCurrentTime(new Date());
         }, 1000);
+
+// 設定画面
+if (screen === 'settings') {
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#f5f5f7' }}>
+      <div style={{
+        background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
+        color: 'white', padding: '16px', display: 'flex', alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <button onClick={() => setScreen('home')} style={{
+          background: 'none', border: 'none', color: 'white', fontSize: '24px',
+          cursor: 'pointer', marginRight: '12px'
+        }}>←</button>
+        <div style={{ fontSize: '18px', fontWeight: '600' }}>設定</div>
+      </div>
+
+      <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', width: '100%' }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '16px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>🗑️ データ管理</h3>
+          
+          <button
+            onClick={() => {
+              if (window.confirm('すべてのチャット履歴を削除しますか？')) {
+                setMessages({});
+                alert('チャット履歴を削除しました');
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginBottom: '12px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              background: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              textAlign: 'left'
+            }}
+          >
+            すべてのチャット履歴を削除
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('星先生の履歴をすべて削除しますか？')) {
+                setHistoryStars([]);
+                setEpisodeNumber(1);
+                alert('星先生の履歴を削除しました');
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginBottom: '12px',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0',
+              background: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              textAlign: 'left'
+            }}
+          >
+            星先生の履歴を削除
+          </button>
+
+          <button
+            onClick={() => {
+              if (window.confirm('キャッシュをクリアして再読み込みしますか？\n最新版が反映されます。')) {
+                localStorage.clear();
+                window.location.reload(true);
+              }
+            }}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ff4444',
+              background: '#fff5f5',
+              color: '#ff4444',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: '600',
+              textAlign: 'left'
+            }}
+          >
+            ⚠️ キャッシュクリア＆再読み込み
+          </button>
+        </div>
+
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          padding: '20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
+          <p style={{ margin: 0, color: '#666' }}>aiPhone v2.1</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+        
         return () => clearInterval(timer);
       }, []);
 
@@ -482,6 +590,34 @@
       const handleSend = async () => {
         if (!input.trim() || isStreaming[screen]) return;
 
+         // 既存の出力中の場合、即座に履歴化
+  if (screen === 'starwars' && showCrawl) {
+    setCrawl(false);
+    const currentMsg = messages.starwars;
+    if (currentMsg && currentMsg.length >= 2) {
+      const lastResponse = currentMsg[currentMsg.length - 1].content;
+      const lastQuery = currentMsg[currentMsg.length - 2].content;
+      
+      if (lastResponse && lastQuery) {
+        const responseLength = lastResponse.length;
+        const starSize = Math.min(Math.max(responseLength / 50, 15), 40);
+        
+        const newStar = {
+          id: Date.now(),
+          query: lastQuery,
+          response: lastResponse,
+          episode: episodeNumber,
+          x: Math.random() * 85 + 5,
+          y: Math.random() * 65 + 10,
+          size: starSize
+        };
+        setHistoryStars(prev => [...prev, newStar]);
+        setEpisodeNumber(prev => prev + 1);
+      }
+    }
+  }
+
+        
         const userMessage = input.trim();
         setInput('');
         setEnterCount(0);
@@ -846,7 +982,7 @@
             background: '#000',
             position: 'relative',
             overflow: 'hidden'
-          }} className={showTitle ? 'screen-darken' : ''}>
+          }}''}>
             {/* Background star field */}
             <div style={{
               position: 'absolute',
@@ -861,16 +997,16 @@
                 const color = starColors[Math.floor(Math.random() * starColors.length)];
                 return (
                   <div
-                    key={i}
-                    className="star"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      width: `${size}px`,
-                      height: `${size}px`,
-                      background: color,
-                      animationDelay: `${Math.random() * 4}s`,
-                      animationDuration: `${3 + Math.random() * 3}s`
+      key={i}
+      className="star"
+      style={{
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * 100}%`,
+        width: `${size}px`,
+        height: `${size}px`,
+        background: color,
+        animationDelay: `${Math.random() * 8}s`,  // 
+        animationDuration: `${6 + Math.random() * 6}s`
                     }}
                   />
                 );
@@ -975,7 +1111,7 @@
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={isMobile ? "メッセージを入力..." : "メッセージ入力 (2回Enterで送信、Shift+Enterで改行)"}
-                disabled={isStreaming.starwars || showTitle || showCrawl}
+                disabled={showTitle || isThinking.starwars} 
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -993,17 +1129,17 @@
                 rows={1}
               />
               <button
-                onClick={handleSend}
-                disabled={!input.trim() || isStreaming.starwars || showTitle || showCrawl}
+  onClick={handleSend}
+  disabled={!input.trim() || showTitle || isThinking.starwars}  
                 style={{
                   width: '50px',
                   height: '50px',
                   borderRadius: '50%',
                   border: 'none',
-                  background: (!input.trim() || isStreaming.starwars || showTitle || showCrawl) ? 'rgba(255,255,255,0.2)' : '#feda4a',
+                  background: (!input.trim() || showTitle || isThinking.starwars) ? 'rgba(255,255,255,0.2)' : '#feda4a',
                   color: '#000',
                   fontSize: '24px',
-                  cursor: (!input.trim() || isStreaming.starwars || showTitle || showCrawl) ? 'not-allowed' : 'pointer',
+                  cursor: (!input.trim() || showTitle || isThinking.starwars) ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1584,3 +1720,4 @@
   </script>
 </body>
 </html>
+
