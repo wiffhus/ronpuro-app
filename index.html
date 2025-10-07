@@ -57,47 +57,46 @@
     .thinking-dot:nth-child(3) { animation-delay: 0.4s; }
 
     /* Star Wars styles */
-   
-   @keyframes titleAppear {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(5);
-  }
-  30% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -150vh) scale(0.1);
-  }
-}
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
- @keyframes crawlMobile {
-  0% {
-    transform: rotateX(25deg) translateY(100%);
-  }
-  100% {
-    transform: rotateX(25deg) translateY(-120%);
-  }
-}
-@keyframes crawlDesktop {
-  0% {
-    transform: rotateX(25deg) translateY(100%);
-  }
-  100% {
-    transform: rotateX(25deg) translateY(-120%);
-  }
-}
+    @keyframes titleAppear {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(5);
+      }
+      30% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -150vh) scale(0.1);
+      }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    @keyframes crawlMobile {
+      0% {
+        transform: rotateX(25deg) translateY(100%);
+      }
+      100% {
+        transform: rotateX(25deg) translateY(-120%);
+      }
+    }
+    @keyframes crawlDesktop {
+      0% {
+        transform: rotateX(25deg) translateY(100%);
+      }
+      100% {
+        transform: rotateX(25deg) translateY(-120%);
+      }
+    }
     .star {
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  opacity: 0.8;
-}
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.8;
+    }
     .crawl-container {
       position: absolute;
       top: 0;
@@ -131,11 +130,11 @@
       animation: crawlDesktop 30s linear forwards;
     }
     .title-display {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  color: #feda4a;
-  font-size: 48px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      color: #feda4a;
+      font-size: 48px;
       font-weight: bold;
       text-align: center;
       animation: titleAppear 4s ease-out forwards;
@@ -144,17 +143,17 @@
       pointer-events: none;
       perspective: 1000px;
     }
-  .history-star {
-  position: absolute;
-  border-radius: 50%;
-  cursor: pointer;
-  background: radial-gradient(circle at 30% 30%, #ff6b35, #ff4500 50%, #cc3700);
-  box-shadow: 0 0 15px rgba(255, 69, 0, 0.8);
-  animation: blink 2s ease-in-out infinite;
-}
-.history-star:hover {
-  box-shadow: 0 0 25px rgba(255, 69, 0, 1);
-}
+    .history-star {
+      position: absolute;
+      border-radius: 50%;
+      cursor: pointer;
+      background: radial-gradient(circle at 30% 30%, #ff6b35, #ff4500 50%, #cc3700);
+      box-shadow: 0 0 15px rgba(255, 69, 0, 0.8);
+      animation: blink 2s ease-in-out infinite;
+    }
+    .history-star:hover {
+      box-shadow: 0 0 25px rgba(255, 69, 0, 1);
+    }
     .sphere-button {
       border-radius: 50%;
       cursor: pointer;
@@ -211,7 +210,7 @@
         { id: 'starwars', name: '星先生', icon: '⭐', color: 'linear-gradient(135deg, #000000 0%, #1a1a2e 100%)', description: 'スター・ウォーズ風に教えます', position: 3 },
         { id: 'settings', name: '設定', icon: '⚙️', color: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)', description: 'アプリの設定', position: 4 },
       ]);
-      const [dockApps, setDockApps] = useState([]);
+      const [dockApps, setDockApps] = useState(['starwars', 'settings']);
       const [draggedApp, setDraggedApp] = useState(null);
       const [showTooltip, setShowTooltip] = useState(null);
       const [longPressTimer, setLongPressTimer] = useState(null);
@@ -331,7 +330,7 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '2.3';
+        const APP_VERSION = '2.4';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
@@ -525,7 +524,7 @@
             
             if (lastResponse && lastQuery) {
               const responseLength = lastResponse.length;
-             const starSize = Math.min(Math.max(responseLength / 100, 10), 25);
+              const starSize = Math.min(Math.max(responseLength / 100, 10), 25);
               
               const newStar = {
                 id: Date.now(),
@@ -605,13 +604,12 @@
 9. 専門用語には[用語](URL)形式でリンク
 10. かわいげのある、親しみやすいトーン
 11. 現在日時: ${new Date().toLocaleString('ja-JP')}`
-          : `あなたは「星先生」です。優秀なAIアシスタントとして、スターウォーズのオープニングクロールのような壮大で格調高い口調で教えてください。以下のルールを厳守：
+          : `あなたは「星先生」です。スター・ウォーズのオープニングクロール風に、壮大で格調高い口調で教えてください。以下のルールを厳守：
 1. **文体**: 「エピソード${toRomanNumeral(episodeNumber)}」「銀河の彼方で...」のような壮大な語り口
 2. **構成**: 
    - 冒頭でエピソード番号風の導入
-   - 本文は物語調で、しかし内容は現実的であり、正しい知識や正確な情報を優秀なAIとして（明言はしない）伝える
+   - 本文は物語調で、知識や情報を伝える
    - 時代背景や歴史的文脈を意識した表現
-   - 宇宙についてのクエリでない場合、わざわざ宇宙を意識した返答をしなくてよい
 3. **トーン**: 荘厳で格調高く、しかし理解しやすい
 4. **長さ**: 中～長文で、じっくり読ませる内容
 5. **URL禁止**: URLやリンクは一切含めない。すべて物語の中で説明する
@@ -670,7 +668,7 @@
             crawlTimeoutRef.current = setTimeout(() => {
               setCrawl(false);
               const responseLength = text.length;
-              const starSize = Math.min(Math.max(responseLength / 50, 30), 60);
+              const starSize = Math.min(Math.max(responseLength / 100, 10), 25);
               
               const newStar = {
                 id: Date.now(),
@@ -1065,7 +1063,7 @@
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}>
                 <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>ℹ️ バージョン情報</h3>
-                <p style={{ margin: 0, color: '#666' }}>aiPhone v2.2</p>
+                <p style={{ margin: 0, color: '#666' }}>aiPhone v2.4</p>
               </div>
             </div>
           </div>
@@ -1092,23 +1090,23 @@
               height: '100%',
               zIndex: 1
             }}>
-         {Array.from({ length: 200 }).map((_, i) => {
-  const size = Math.random() * 2 + 0.5;
-  const color = starColors[Math.floor(Math.random() * starColors.length)];
-  return (
-    <div
-      key={i}
-      className="star"
-      style={{
-        left: `${Math.random() * 100}%`,
-        top: `${Math.random() * 100}%`,
-        width: `${size}px`,
-        height: `${size}px`,
-        background: color
-      }}
-    />
-  );
-})}
+              {Array.from({ length: 200 }).map((_, i) => {
+                const size = Math.random() * 2 + 0.5;
+                const color = starColors[Math.floor(Math.random() * starColors.length)];
+                return (
+                  <div
+                    key={i}
+                    className="star"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      background: color
+                    }}
+                  />
+                );
+              })}
             </div>
 
             {/* History stars */}
@@ -1124,13 +1122,13 @@
                   zIndex: 5
                 }}
                 onClick={() => {
-  setSelectedHistory(star);
-  setCurrentQuery(star.query);
-  setCurrentResponse(star.response);
-  setShowTitle(false);
-  setCrawl(false);
-  setShowStaticResponse(true);
-}}
+                  setSelectedHistory(star);
+                  setCurrentQuery(star.query);
+                  setCurrentResponse(star.response);
+                  setShowTitle(false);
+                  setCrawl(false);
+                  setShowStaticResponse(true);
+                }}
                 title={`エピソード${toRomanNumeral(star.episode)}: ${star.query.substring(0, 30)}...`}
               />
             ))}
@@ -1154,24 +1152,24 @@
             )}
 
             {/* Static response display */}
-           {showStaticResponse && (
-  <div className="static-response">
-    <div style={{ 
-      fontSize: '28px', 
-      marginBottom: '24px', 
-      color: '#feda4a',
-      fontWeight: 'bold',
-      textAlign: 'center',
-      borderBottom: '2px solid #feda4a',
-      paddingBottom: '16px'
-    }}>
-      {currentQuery}
-    </div>
-    {currentResponse.split('\n').map((line, i) => (
-      <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
-    ))}
-  </div>
-)}
+            {showStaticResponse && (
+              <div className="static-response">
+                <div style={{ 
+                  fontSize: '28px', 
+                  marginBottom: '24px', 
+                  color: '#feda4a',
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  borderBottom: '2px solid #feda4a',
+                  paddingBottom: '16px'
+                }}>
+                  {currentQuery}
+                </div>
+                {currentResponse.split('\n').map((line, i) => (
+                  <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
+                ))}
+              </div>
+            )}
 
             {/* Home button */}
             <button
@@ -1847,7 +1845,3 @@
   </script>
 </body>
 </html>
-
-
-
-
