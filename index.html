@@ -1093,21 +1093,23 @@
               {Array.from({ length: 200 }).map((_, i) => {
                 const size = Math.random() * 2 + 0.5;
                 const color = starColors[Math.floor(Math.random() * starColors.length)];
-                return (
-                  <div
-                    key={i}
-                    className="star"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      width: `${size}px`,
-                      height: `${size}px`,
-                      background: color,
-                       **animation: 'none',**
+            return (
+                  <div
+                    key={i}
+                    className="star"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      background: color,
+                        // ↓↓↓ 以下の2行を追加してください ↓↓↓
+                      **animation: 'none',**
                       **transform: 'none'**
-                    }}
-                  />
-                );
+                        // ↑↑↑ 以下の2行を追加してください ↑↑↑
+                    }}
+                  />
+                );
               })}
             </div>
 
@@ -1847,5 +1849,6 @@
   </script>
 </body>
 </html>
+
 
 
