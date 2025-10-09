@@ -330,7 +330,7 @@
       }, [screen]);
       
       useEffect(() => {
-        const APP_VERSION = '2.5.1';
+        const APP_VERSION = '2.5.2';
         const savedVersion = localStorage.getItem('aiphone_version');
         const savedMessages = localStorage.getItem('aiphone_messages');
         const savedAppPositions = localStorage.getItem('aiphone_appPositions');
@@ -1103,10 +1103,9 @@
                       width: `${size}px`,
                       height: `${size}px`,
                       background: color,
-                        // ↓↓↓ 以下の2行を追加してください ↓↓↓
                       **animation: 'none',**
                       **transform: 'none'**
-                        // ↑↑↑ 以下の2行を追加してください ↑↑↑
+                      
                     }}
                   />
                 );
@@ -1849,6 +1848,7 @@
   </script>
 </body>
 </html>
+
 
 
 
