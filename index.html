@@ -174,20 +174,57 @@
     .sphere-button:active {
       transform: scale(0.95);
     }
-    .static-response {
+       .static-response {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       width: 90%;
       max-width: 800px;
-      margin: 100px auto 100px;
       color: #feda4a;
       font-size: 20px;
       font-weight: bold;
       line-height: 1.8;
       text-align: justify;
       padding: 20px;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.9);
       border-radius: 12px;
-      max-height: 70vh;
+      max-height: 80vh;
       overflow-y: auto;
+      z-index: 50;
+      box-shadow: 0 0 50px rgba(254, 218, 74, 0.3);
+    }
+    .static-response-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 45;
+      cursor: pointer;
+    }
+    .static-response-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      background: rgba(254, 218, 74, 0.2);
+      border: 2px solid #feda4a;
+      border-radius: 50%;
+      color: #feda4a;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    .static-response-close:hover {
+      background: rgba(254, 218, 74, 0.4);
+      transform: scale(1.1);
     }
   </style>
 </head>
@@ -1154,24 +1191,45 @@
               </div>
             )}
 
-            {/* Static response display */}
+           {/* Static response display */}
             {showStaticResponse && (
-              <div className="static-response">
-                <div style={{ 
-                  fontSize: '28px', 
-                  marginBottom: '24px', 
-                  color: '#feda4a',
-                  fontWeight: 'bold',
-                  textAlign: 'center',
-                  borderBottom: '2px solid #feda4a',
-                  paddingBottom: '16px'
-                }}>
-                  {currentQuery}
+              <>
+                <div 
+                  className="static-response-overlay"
+                  onClick={() => {
+                    setShowStaticResponse(false);
+                    setSelectedHistory(null);
+                  }}
+                />
+                <div className="static-response">
+                  <button 
+                    className="static-response-close"
+                    onClick={() => {
+                      setShowStaticResponse(false);
+                      setSelectedHistory(null);
+                    }}
+                    title="閉じる"
+                  >
+                    ×
+                  </button>
+                  <div style={{ 
+                    fontSize: '28px', 
+                    marginBottom: '24px', 
+                    color: '#feda4a',
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                    borderBottom: '2px solid #feda4a',
+                    paddingBottom: '16px'
+                  }}>
+                    {currentQuery}
+                  </div>
+                  <div style={{ paddingBottom: '20px' }}>
+                    {currentResponse.split('\n').map((line, i) => (
+                      <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
+                    ))}
+                  </div>
                 </div>
-                {currentResponse.split('\n').map((line, i) => (
-                  <p key={i} style={{ marginBottom: '1em' }}>{line}</p>
-                ))}
-              </div>
+              </>
             )}
 
             {/* Home button */}
@@ -1848,6 +1906,7 @@
   </script>
 </body>
 </html>
+
 
 
 
